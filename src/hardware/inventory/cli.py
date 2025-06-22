@@ -112,4 +112,3 @@ def main(argv: list[str] | None = None) -> None:
         _process(p, db, args, proc_tools, post_tools)
 
     console.print("[green]Done. Database updated.[/]")
-

@@ -1,18 +1,17 @@
-from __future__ import annotations
 
-import argparse
+"""Entry point for the ``hardware`` command line tool."""
 
-from .inventory.cli import main as inventory_main
+from .inventory import cli as inventory_cli
 
 
 def main(argv: list[str] | None = None) -> None:
-    parser = argparse.ArgumentParser(prog="hardware")
-    subparsers = parser.add_subparsers(dest="command")
-    subparsers.add_parser("inventory", help="Component loader", add_help=False)
+    """Dispatch command line arguments to the appropriate handler."""
+    parser = inventory_cli.build_parser()
+    args = parser.parse_args(argv)
 
-    ns, remaining = parser.parse_known_args(argv)
-    if ns.command == "inventory":
-        inventory_main(remaining)
-    else:
-        parser.print_help()
+    if args.command == "inventory":
+        inventory_cli.handle_inventory(args)
 
+
+if __name__ == "__main__":  # pragma: no cover - entry point
+    main()

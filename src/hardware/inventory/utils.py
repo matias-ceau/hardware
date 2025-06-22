@@ -1,46 +1,18 @@
+
+"""Utility helpers for manipulating the inventory database."""
+
+ 
 from __future__ import annotations
-
-import hashlib
+ 
 import json
-import os
-import re
-import sqlite3
+
+ 
+
+ 
 from pathlib import Path
-from typing import Any, Dict, Iterable
 
-import requests
+ 
 
-
-# OCR service endpoints and token environment variables
-DEFAULT_ENDPOINTS = {
-    "mistral": "https://api.mistral.ai/v1/ocr",
-    "tavily_extract": "https://api.tavily.com/extract",
-    "ocr_space": "https://api.ocr.space/parse/image",
-}
-
-TOKEN_ENV = {
-    "mistral": "MISTRAL_API_KEY",
-    "tavily_extract": "TAVILY_API_KEY",
-    "ocr_space": "OCR_SPACE_API_KEY",
-}
-
-
-# ----------------------- OCR helpers -----------------------
-
-def ocr_extract(path: Path, service: str) -> str:
-    """Send ``path`` to the OCR ``service`` and return extracted text."""
-    url = DEFAULT_ENDPOINTS[service]
-    token = os.getenv(TOKEN_ENV.get(service, ""), "")
-    headers = {"Authorization": f"Bearer {token}"} if token else {}
-    with path.open("rb") as fh:
-        files = {"file": (path.name, fh)}
-        resp = requests.post(url, headers=headers, files=files)
-    resp.raise_for_status()
-    data = resp.json()
-    return data.get("text") or data.get("ParsedResults", [{}])[0].get("ParsedText", "")
-
-
-# ----------------------- Parsing helpers -----------------------
 
 FIELD_PATTERNS = {
     "value": r"([0-9\.]+\s*(?:[µu]F|nF|pF|kΩ|Ω|mH|uH|%)|10[0-9]{2})",
