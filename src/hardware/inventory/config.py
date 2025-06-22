@@ -1,17 +1,20 @@
-"""Configuration helpers for the inventory subsystem."""
 
-from dataclasses import dataclass
+from __future__ import annotations
+
 from pathlib import Path
-import os
+import tomllib
 
 
-@dataclass(slots=True)
-class InventoryConfig:
-    """Simple configuration object.
+CFG_FILES = [Path.cwd() / "cfg.toml", Path.home() / ".component_loader.toml"]
 
-    The path of the inventory database can be overridden via the
-    ``HARDWARE_DB_PATH`` environment variable. By default ``inventory.json``
-    in the current working directory is used.
-    """
 
-    path: Path = Path(os.getenv("HARDWARE_DB_PATH", "inventory.json"))
+def load_config() -> dict:
+    """Load configuration from ``cfg.toml`` or the user's home directory."""
+    for path in CFG_FILES:
+        if path.exists():
+            with path.open("rb") as f:
+                return tomllib.load(f)
+    return {}
+
+
+CONFIG = load_config()

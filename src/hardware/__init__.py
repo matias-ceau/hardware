@@ -1,3 +1,4 @@
+
 """Entry point for the ``hardware`` command line tool."""
 
 from .inventory import cli as inventory_cli
