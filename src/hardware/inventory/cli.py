@@ -19,16 +19,22 @@ console = Console()
 
 def _resolve_db_paths(args: argparse.Namespace) -> utils.BaseDB:
     cfg = config.CONFIG
-    db_sqlite = args.db_sqlite or ("metadata.db" if Path("metadata.db").exists() else None)
+    db_sqlite = args.db_sqlite or (
+        "metadata.db" if Path("metadata.db").exists() else None
+    )
     if not db_sqlite:
         db_sqlite = cfg.get("database", {}).get("sqlite_path")
 
-    db_json = args.db_json or ("components.jsonld" if Path("components.jsonld").exists() else None)
+    db_json = args.db_json or (
+        "components.jsonld" if Path("components.jsonld").exists() else None
+    )
     if not db_json:
         db_json = cfg.get("database", {}).get("jsonld_path")
 
     if not db_sqlite and not db_json:
-        console.print("[bold red]Error:[/] Specify --db-sqlite or --db-json or configure in cfg.toml")
+        console.print(
+            "[bold red]Error:[/] Specify --db-sqlite or --db-json or configure in cfg.toml"
+        )
         sys.exit(1)
 
     if db_sqlite:
@@ -55,7 +61,13 @@ def _review(candidate: dict, db: utils.BaseDB, service: str) -> dict | None:
     return candidate
 
 
-def _process(path: Path, db: utils.BaseDB, args: argparse.Namespace, pre: list[str], post: list[str]) -> None:
+def _process(
+    path: Path,
+    db: utils.BaseDB,
+    args: argparse.Namespace,
+    pre: list[str],
+    post: list[str],
+) -> None:
     if args.resume and db.has_file(str(path)):
         return
     text = utils.ocr_extract(path, args.service)
@@ -80,12 +92,16 @@ def main(argv: list[str] | None = None) -> None:
     post_tools = cfg.get("tools", {}).get("postprocess", [])
     service_default = cfg.get("main", {}).get("service", "mistral")
 
-    parser = argparse.ArgumentParser(description=cfg.get("main", {}).get("description", "Component loader"))
+    parser = argparse.ArgumentParser(
+        description=cfg.get("main", {}).get("description", "Component loader")
+    )
     parser.add_argument("path")
     parser.add_argument("--db-sqlite")
     parser.add_argument("--db-json")
     parser.add_argument("--import-db")
-    parser.add_argument("--service", default=service_default, choices=list(utils.DEFAULT_ENDPOINTS))
+    parser.add_argument(
+        "--service", default=service_default, choices=list(utils.DEFAULT_ENDPOINTS)
+    )
     parser.add_argument("--ext", default=",".join([".png", ".jpg", ".jpeg", ".pdf"]))
     parser.add_argument("--continue", dest="resume", action="store_true")
 
@@ -95,7 +111,7 @@ def main(argv: list[str] | None = None) -> None:
     if args.import_db:
         db.import_db(Path(args.import_db))
 
-    exts = {e if e.startswith('.') else f'.{e}' for e in args.ext.split(',')}
+    exts = {e if e.startswith(".") else f".{e}" for e in args.ext.split(",")}
     target = Path(args.path)
     files: list[Path] = []
     if target.is_dir():

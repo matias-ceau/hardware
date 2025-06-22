@@ -1,18 +1,14 @@
-
 """Utility helpers for manipulating the inventory database."""
 
- 
 from __future__ import annotations
- 
+
+import sqlite3
 import json
-
- 
-
- 
+from collections.abc import Iterable
+from typing import Any, Dict
+import re
+import hashlib
 from pathlib import Path
-
- 
-
 
 FIELD_PATTERNS = {
     "value": r"([0-9\.]+\s*(?:[µu]F|nF|pF|kΩ|Ω|mH|uH|%)|10[0-9]{2})",
@@ -36,6 +32,7 @@ def parse_fields(text: str) -> Dict[str, str]:
 
 # ----------------------- Utility helpers -----------------------
 
+
 def text_hash(text: str) -> str:
     """Return a SHA-1 hash for ``text``."""
     return hashlib.sha1(text.encode()).hexdigest()
@@ -47,6 +44,7 @@ def trim_whitespace(text: str) -> str:
 
 def normalize_unicode(text: str) -> str:
     import unicodedata
+
     return unicodedata.normalize("NFKC", text)
 
 
@@ -62,17 +60,22 @@ def dedupe_entries(entry: Dict[str, Any]) -> Dict[str, Any]:
 
 # ----------------------- Database backends -----------------------
 
+
 class BaseDB:
     def has_file(self, path: str) -> bool:
+        """Check if the file path exists in the database."""
         raise NotImplementedError
 
     def has_hash(self, value: str) -> bool:
+        """Check if the hash value exists in the database."""
         raise NotImplementedError
 
     def add(self, entry: Dict[str, Any], path: str, hsh: str) -> None:
+        """Add an entry to the database with associated file path and hash."""
         raise NotImplementedError
 
     def import_db(self, path: Path) -> None:
+        """Import database entries from the given path."""
         raise NotImplementedError
 
     def normalize_type(self, typ: str) -> str:
@@ -167,4 +170,3 @@ class SQLiteDB(BaseDB):
                 )
         self.conn.commit()
         src.close()
-

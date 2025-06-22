@@ -1,12 +1,15 @@
-
 """Entry point for the ``hardware`` command line tool."""
 
+import argparse
 from .inventory import cli as inventory_cli
 
 
 def main(argv: list[str] | None = None) -> None:
     """Dispatch command line arguments to the appropriate handler."""
-    parser = inventory_cli.build_parser()
+    parser = argparse.parse.ArgumentParser(
+        description="Hardware management command line tool",
+        prog="hardware",
+    )
     args = parser.parse_args(argv)
 
     if args.command == "inventory":
