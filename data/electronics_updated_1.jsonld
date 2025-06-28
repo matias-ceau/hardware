@@ -1,0 +1,725 @@
+{
+    "@context": {
+        "ex": "http://example.org/",
+        "ComponentCollection": "ex:ComponentCollection",
+        "Resistor": "ex:Resistor",
+        "Capacitor": "ex:Capacitor",
+        "Transistor": "ex:Transistor",
+        "IC": "ex:IC",
+        "Potentiometer": "ex:Potentiometer",
+        "PassiveComponent": "ex:PassiveComponent",
+        "Component": "ex:Component",
+        "resistors": "ex:resistors",
+        "capacitors": "ex:capacitors",
+        "transistors": "ex:transistors",
+        "ICs": "ex:ICs",
+        "potentiometers": "ex:potentiometers",
+        "passives": "ex:passives",
+        "components": "ex:components",
+        "resistance": "ex:resistanceValue",
+        "resistanceUnit": "ex:resistanceUnit",
+        "capacitance": "ex:capacitanceValue",
+        "capacitanceUnit": "ex:capacitanceUnit",
+        "voltage": "ex:voltageValue",
+        "voltageUnit": "ex:voltageUnit",
+        "temperature": "ex:temperatureValue",
+        "temperatureUnit": "ex:temperatureUnit",
+        "quantity": "ex:quantity",
+        "description": "ex:description",
+        "type": "ex:type",
+        "color": "ex:color",
+        "partNumber": "ex:partNumber",
+        "package": "ex:package",
+        "tolerance": "ex:tolerance",
+        "pitch": "ex:pitch",
+        "sizes": "ex:sizes",
+        "variety": "ex:variety",
+        "usage": "ex:usage",
+        "taper": "ex:taper",
+        "icType": "ex:icType",
+        "potentiometerType": "ex:potentiometerType",
+        "capacitorType": "ex:capacitorType",
+        "quantityUnitless": "ex:quantityUnitless"
+    },
+    "@graph": [
+        {
+            "@id": "ex:organizedComponents",
+            "@type": "ComponentCollection",
+            "resistors": [
+                {
+                    "@type": "Resistor",
+                    "resistance": 0.47,
+                    "resistanceUnit": "ohms",
+                    "quantity": 10
+                },
+                {
+                    "@type": "Resistor",
+                    "resistance": 10,
+                    "resistanceUnit": "ohms",
+                    "quantity": 10
+                },
+                {
+                    "@type": "Resistor",
+                    "resistance": 100,
+                    "resistanceUnit": "ohms",
+                    "quantity": 40
+                },
+                {
+                    "@type": "Resistor",
+                    "resistance": 220,
+                    "resistanceUnit": "ohms",
+                    "quantity": 10
+                },
+                {
+                    "@type": "Resistor",
+                    "resistance": 330,
+                    "resistanceUnit": "ohms",
+                    "quantity": 10
+                },
+                {
+                    "@type": "Resistor",
+                    "resistance": 470,
+                    "resistanceUnit": "ohms",
+                    "quantity": 80
+                },
+                {
+                    "@type": "Resistor",
+                    "resistance": 820,
+                    "resistanceUnit": "ohms",
+                    "quantity": 10
+                },
+                {
+                    "@type": "Resistor",
+                    "resistance": 1000,
+                    "resistanceUnit": "ohms",
+                    "quantity": 10
+                },
+                {
+                    "@type": "Resistor",
+                    "resistance": 1500,
+                    "resistanceUnit": "ohms",
+                    "quantity": 10
+                },
+                {
+                    "@type": "Resistor",
+                    "resistance": 1800,
+                    "resistanceUnit": "ohms",
+                    "quantity": 10
+                },
+                {
+                    "@type": "Resistor",
+                    "resistance": 2200,
+                    "resistanceUnit": "ohms",
+                    "quantity": 10
+                },
+                {
+                    "@type": "Resistor",
+                    "resistance": 4700,
+                    "resistanceUnit": "ohms",
+                    "quantity": 10
+                },
+                {
+                    "@type": "Resistor",
+                    "resistance": 5600,
+                    "resistanceUnit": "ohms",
+                    "quantity": 10
+                },
+                {
+                    "@type": "Resistor",
+                    "resistance": 6800,
+                    "resistanceUnit": "ohms",
+                    "quantity": 10
+                },
+                {
+                    "@type": "Resistor",
+                    "resistance": 8200,
+                    "resistanceUnit": "ohms",
+                    "quantity": 10
+                },
+                {
+                    "@type": "Resistor",
+                    "resistance": 10000,
+                    "resistanceUnit": "ohms",
+                    "quantity": 10
+                },
+                {
+                    "@type": "Resistor",
+                    "resistance": 12000,
+                    "resistanceUnit": "ohms",
+                    "quantity": 10
+                },
+                {
+                    "@type": "Resistor",
+                    "resistance": 15000,
+                    "resistanceUnit": "ohms",
+                    "quantity": 10
+                },
+                {
+                    "@type": "Resistor",
+                    "resistance": 20000,
+                    "resistanceUnit": "ohms",
+                    "quantity": 10
+                },
+                {
+                    "@type": "Resistor",
+                    "resistance": 27000,
+                    "resistanceUnit": "ohms",
+                    "quantity": 10
+                },
+                {
+                    "@type": "Resistor",
+                    "resistance": 33000,
+                    "resistanceUnit": "ohms",
+                    "quantity": 10
+                },
+                {
+                    "@type": "Resistor",
+                    "resistance": 47000,
+                    "resistanceUnit": "ohms",
+                    "quantity": 10
+                },
+                {
+                    "@type": "Resistor",
+                    "resistance": 62000,
+                    "resistanceUnit": "ohms",
+                    "quantity": 10
+                },
+                {
+                    "@type": "Resistor",
+                    "resistance": 68000,
+                    "resistanceUnit": "ohms",
+                    "quantity": 10
+                },
+                {
+                    "@type": "Resistor",
+                    "resistance": 100000,
+                    "resistanceUnit": "ohms",
+                    "quantity": 10
+                },
+                {
+                    "@type": "Resistor",
+                    "resistance": 150000,
+                    "resistanceUnit": "ohms",
+                    "quantity": 10
+                },
+                {
+                    "@type": "Resistor",
+                    "resistance": 180000,
+                    "resistanceUnit": "ohms",
+                    "quantity": 10
+                },
+                {
+                    "@type": "Resistor",
+                    "resistance": 220000,
+                    "resistanceUnit": "ohms",
+                    "quantity": 10
+                },
+                {
+                    "@type": "Resistor",
+                    "resistance": 270000,
+                    "resistanceUnit": "ohms",
+                    "quantity": 10
+                },
+                {
+                    "@type": "Resistor",
+                    "resistance": 330000,
+                    "resistanceUnit": "ohms",
+                    "quantity": 10
+                },
+                {
+                    "@type": "Resistor",
+                    "resistance": 430000,
+                    "resistanceUnit": "ohms",
+                    "quantity": 10
+                },
+                {
+                    "@type": "Resistor",
+                    "resistance": 470000,
+                    "resistanceUnit": "ohms",
+                    "quantity": 10
+                },
+                {
+                    "@type": "Resistor",
+                    "resistance": 680000,
+                    "resistanceUnit": "ohms",
+                    "quantity": 10
+                },
+                {
+                    "@type": "Resistor",
+                    "resistance": 1000000,
+                    "resistanceUnit": "ohms",
+                    "quantity": 10
+                },
+                {
+                    "@type": "Resistor",
+                    "resistance": 1500000,
+                    "resistanceUnit": "ohms",
+                    "quantity": 10
+                },
+                {
+                    "@type": "Resistor",
+                    "resistance": 2000000,
+                    "resistanceUnit": "ohms",
+                    "quantity": 10
+                }
+            ],
+            "capacitors": [
+                {
+                    "@type": "Capacitor",
+                    "capacitorType": "electrolytic",
+                    "capacitance": 1e-06,
+                    "capacitanceUnit": "F",
+                    "voltage": 50,
+                    "voltageUnit": "V",
+                    "temperature": 105,
+                    "temperatureUnit": "C",
+                    "quantity": 20
+                },
+                {
+                    "@type": "Capacitor",
+                    "capacitorType": "electrolytic",
+                    "capacitance": 1e-06,
+                    "capacitanceUnit": "F",
+                    "voltage": 35,
+                    "voltageUnit": "V",
+                    "quantity": 30
+                },
+                {
+                    "@type": "Capacitor",
+                    "capacitorType": "electrolytic",
+                    "capacitance": 2.2e-06,
+                    "capacitanceUnit": "F",
+                    "voltage": null,
+                    "quantity": null
+                },
+                {
+                    "@type": "Capacitor",
+                    "capacitorType": "electrolytic",
+                    "capacitance": 1e-05,
+                    "capacitanceUnit": "F",
+                    "voltage": 25,
+                    "voltageUnit": "V",
+                    "quantity": 14
+                },
+                {
+                    "@type": "Capacitor",
+                    "capacitorType": "electrolytic",
+                    "capacitance": 1e-05,
+                    "capacitanceUnit": "F",
+                    "voltage": 50,
+                    "voltageUnit": "V",
+                    "temperature": 105,
+                    "temperatureUnit": "C",
+                    "quantity": 20
+                },
+                {
+                    "@type": "Capacitor",
+                    "capacitorType": "electrolytic",
+                    "capacitance": 4.7e-05,
+                    "capacitanceUnit": "F",
+                    "voltage": 25,
+                    "voltageUnit": "V",
+                    "temperature": 105,
+                    "temperatureUnit": "C",
+                    "quantity": 20
+                },
+                {
+                    "@type": "Capacitor",
+                    "capacitorType": "electrolytic",
+                    "capacitance": 4.7e-05,
+                    "capacitanceUnit": "F",
+                    "voltage": 50,
+                    "voltageUnit": "V",
+                    "quantity": 2
+                },
+                {
+                    "@type": "Capacitor",
+                    "capacitorType": "electrolytic",
+                    "capacitance": 0.0001,
+                    "capacitanceUnit": "F",
+                    "voltage": 35,
+                    "voltageUnit": "V",
+                    "quantity": 10
+                },
+                {
+                    "@type": "Capacitor",
+                    "capacitorType": "electrolytic",
+                    "capacitance": 0.00047,
+                    "capacitanceUnit": "F",
+                    "voltage": 25,
+                    "voltageUnit": "V",
+                    "type": "Low ESR",
+                    "quantity": 12
+                },
+                {
+                    "@type": "Capacitor",
+                    "capacitorType": "ceramic",
+                    "capacitance": 1e-07,
+                    "capacitanceUnit": "F",
+                    "voltage": 630,
+                    "voltageUnit": "V",
+                    "type": "TAD Mustard",
+                    "quantity": 2
+                },
+                {
+                    "@type": "Capacitor",
+                    "capacitorType": "ceramic",
+                    "capacitance": 2.2e-08,
+                    "capacitanceUnit": "F",
+                    "voltage": 600,
+                    "voltageUnit": "V",
+                    "type": "Orange Drop",
+                    "quantity": 1
+                },
+                {
+                    "@type": "Capacitor",
+                    "capacitorType": "ceramic",
+                    "capacitance": 1e-07,
+                    "capacitanceUnit": "F",
+                    "voltage": 50,
+                    "voltageUnit": "V",
+                    "type": "Monolithic",
+                    "quantity": 2
+                },
+                {
+                    "@type": "Capacitor",
+                    "capacitorType": "ceramic",
+                    "capacitance": 1e-10,
+                    "capacitanceUnit": "F",
+                    "voltage": 50,
+                    "voltageUnit": "V",
+                    "type": "Monolithic",
+                    "quantity": 10
+                },
+                {
+                    "@type": "Capacitor",
+                    "capacitorType": "ceramic",
+                    "capacitance": 4.7e-08,
+                    "capacitanceUnit": "F",
+                    "voltage": null,
+                    "quantity": 2,
+                    "type": "Marked as '2A473J'"
+                },
+                {
+                    "@type": "Capacitor",
+                    "capacitorType": "film",
+                    "capacitance": 1e-09,
+                    "capacitanceUnit": "F",
+                    "voltage": 100,
+                    "voltageUnit": "V",
+                    "tolerance": "5%",
+                    "quantity": 10
+                },
+                {
+                    "@type": "Capacitor",
+                    "capacitorType": "film",
+                    "capacitance": 1e-09,
+                    "capacitanceUnit": "F",
+                    "voltage": 100,
+                    "voltageUnit": "V",
+                    "tolerance": "5%",
+                    "quantity": 12
+                },
+                {
+                    "@type": "Capacitor",
+                    "capacitorType": "film",
+                    "capacitance": 2.2e-09,
+                    "capacitanceUnit": "F",
+                    "voltage": 100,
+                    "voltageUnit": "V",
+                    "tolerance": "5%",
+                    "quantity": 1
+                },
+                {
+                    "@type": "Capacitor",
+                    "capacitorType": "film",
+                    "capacitance": 1e-08,
+                    "capacitanceUnit": "F",
+                    "voltage": 100,
+                    "voltageUnit": "V",
+                    "tolerance": "5%",
+                    "quantity": 10
+                },
+                {
+                    "@type": "Capacitor",
+                    "capacitorType": "film",
+                    "capacitance": 2.2e-08,
+                    "capacitanceUnit": "F",
+                    "voltage": 100,
+                    "voltageUnit": "V",
+                    "tolerance": "5%",
+                    "quantity": 10
+                },
+                {
+                    "@type": "Capacitor",
+                    "capacitorType": "film",
+                    "capacitance": 3.3e-08,
+                    "capacitanceUnit": "F",
+                    "voltage": 100,
+                    "voltageUnit": "V",
+                    "tolerance": "5%",
+                    "quantity": 10
+                },
+                {
+                    "@type": "Capacitor",
+                    "capacitorType": "film",
+                    "capacitance": 1e-07,
+                    "capacitanceUnit": "F",
+                    "voltage": 100,
+                    "voltageUnit": "V",
+                    "tolerance": "5%",
+                    "quantity": 20
+                }
+            ],
+            "transistors": [
+                {
+                    "@type": "Transistor",
+                    "subCategory": "JFET",
+                    "partNumber": "2N5485",
+                    "description": "N-Channel JFET, Low Noise",
+                    "package": "TO-92",
+                    "quantity": 18
+                },
+                {
+                    "@type": "Transistor",
+                    "subCategory": "NPN",
+                    "partNumber": "BC547",
+                    "description": "General Purpose NPN",
+                    "package": "TO-92",
+                    "quantity": 225
+                }
+            ],
+            "ICs": [
+                {
+                    "@type": "IC",
+                    "icType": "op-amp",
+                    "partNumber": "TL084CN",
+                    "description": "Quad JFET-input op-amp",
+                    "package": "DIP-14",
+                    "quantity": 4
+                },
+                {
+                    "@type": "IC",
+                    "icType": "op-amp",
+                    "partNumber": "TL072CP",
+                    "description": "Dual JFET-input op-amp",
+                    "package": "DIP-8",
+                    "quantity": 7
+                },
+                {
+                    "@type": "IC",
+                    "icType": "OTA",
+                    "partNumber": "LM13700N",
+                    "description": "Dual OTA",
+                    "package": "DIP-16",
+                    "quantity": 3
+                },
+                {
+                    "@type": "IC",
+                    "icType": "synthesizer_IC",
+                    "partNumber": "AS3340",
+                    "description": "VCO for analog synths",
+                    "package": "DIP-16",
+                    "quantity": 2
+                },
+                {
+                    "@type": "IC",
+                    "icType": "synthesizer_IC",
+                    "partNumber": "AS3310",
+                    "description": "Voltage Controlled Envelope Generator",
+                    "package": "DIP-16",
+                    "quantity": 2
+                },
+                {
+                    "@type": "IC",
+                    "icType": "voltage_regulator",
+                    "partNumber": "L78L05",
+                    "description": "5V 100mA Linear Regulator",
+                    "package": "TO-92",
+                    "quantity": 5
+                },
+                {
+                    "@type": "IC",
+                    "icType": "voltage_regulator",
+                    "partNumber": "L78L09ACZ",
+                    "description": "9V 100mA Linear Regulator",
+                    "package": "TO-92",
+                    "quantity": 5
+                },
+                {
+                    "@type": "IC",
+                    "icType": "voltage_regulator",
+                    "partNumber": "L78M05",
+                    "description": "5V 500mA Linear Regulator",
+                    "package": "TO-220",
+                    "quantity": 10
+                },
+                {
+                    "@type": "IC",
+                    "icType": "voltage_regulator",
+                    "partNumber": "LM317T",
+                    "description": "Adjustable 1.25V-37V Regulator, 1.5A",
+                    "package": "TO-220",
+                    "quantity": 3
+                }
+            ],
+            "potentiometers": [
+                {
+                    "@type": "Potentiometer",
+                    "potentiometerType": "audio",
+                    "resistance": 250,
+                    "resistanceUnit": "ohms",
+                    "taper": "A (Logarithmic)",
+                    "package": "Panel Mount",
+                    "quantity": 1
+                },
+                {
+                    "@type": "Potentiometer",
+                    "potentiometerType": "audio",
+                    "resistance": 100000,
+                    "resistanceUnit": "ohms",
+                    "taper": "A",
+                    "package": "Panel Mount",
+                    "quantity": 2
+                },
+                {
+                    "@type": "Potentiometer",
+                    "potentiometerType": "audio",
+                    "resistance": 1000,
+                    "resistanceUnit": "ohms",
+                    "taper": "A",
+                    "package": "Panel Mount",
+                    "quantity": 1
+                },
+                {
+                    "@type": "Potentiometer",
+                    "potentiometerType": "linear",
+                    "resistance": 1000,
+                    "resistanceUnit": "ohms",
+                    "taper": "B (Linear)",
+                    "package": "Rotary PCB Mount",
+                    "quantity": 4
+                },
+                {
+                    "@type": "Potentiometer",
+                    "potentiometerType": "linear",
+                    "resistance": 100000,
+                    "resistanceUnit": "ohms",
+                    "taper": "B",
+                    "package": "Rotary PCB Mount",
+                    "quantity": 5
+                },
+                {
+                    "@type": "Potentiometer",
+                    "potentiometerType": "anti-log",
+                    "resistance": 1000000,
+                    "resistanceUnit": "ohms",
+                    "taper": "C (Anti-log)",
+                    "package": "Panel Mount",
+                    "quantity": 1
+                }
+            ],
+            "passives": [
+                {
+                    "@type": "PassiveComponent",
+                    "subCategory": "diode",
+                    "partNumber": "1N4148",
+                    "description": "Fast Switching Diode",
+                    "package": "DO-35",
+                    "quantity": 36
+                },
+                {
+                    "@type": "PassiveComponent",
+                    "subCategory": "LED",
+                    "color": "Red",
+                    "package": "5mm",
+                    "quantity": 10
+                },
+                {
+                    "@type": "PassiveComponent",
+                    "subCategory": "LED",
+                    "color": "Green",
+                    "package": "5mm",
+                    "quantity": 6
+                }
+            ]
+        },
+        {
+            "@id": "ex:lastDrawer",
+            "@type": "ComponentCollection",
+            "components": [
+                {
+                    "@type": "Component",
+                    "name": "8-pin DIP to SMD Adapter Sockets",
+                    "category": "IC Adapter",
+                    "quantity": 10,
+                    "usage": "Converts DIP ICs to SMD applications"
+                },
+                {
+                    "@type": "Component",
+                    "name": "Male Pin Headers",
+                    "category": "Connector",
+                    "quantity": 50,
+                    "pitch": 2.54,
+                    "usage": "Used for PCB prototyping and microcontroller connections"
+                },
+                {
+                    "@type": "Component",
+                    "name": "IC Sockets",
+                    "category": "Connector",
+                    "quantity": 40,
+                    "sizes": [
+                        "8-pin",
+                        "14-pin",
+                        "16-pin",
+                        "28-pin"
+                    ],
+                    "usage": "Used to mount ICs without soldering"
+                },
+                {
+                    "@type": "Component",
+                    "name": "3.5mm Mono TS Audio Plugs",
+                    "category": "Audio Connector",
+                    "quantity": 30,
+                    "usage": "Used for Eurorack modular synthesizers and patch cables"
+                },
+                {
+                    "@type": "Component",
+                    "name": "6.35mm Mono Guitar Sockets",
+                    "category": "Audio Connector",
+                    "quantity": 20,
+                    "usage": "Used for guitar cables and larger audio interfaces"
+                },
+                {
+                    "@type": "Component",
+                    "name": "Stripboard (Perfboard)",
+                    "category": "PCB",
+                    "quantity": 20,
+                    "size": "Small rectangular",
+                    "usage": "Used for prototyping circuits without etching a PCB"
+                },
+                {
+                    "@type": "Component",
+                    "name": "6.35mm Mono Guitar Sockets",
+                    "category": "Audio Connector",
+                    "quantity": 12,
+                    "usage": "Used for Eurorack modular synths and audio input/output"
+                },
+                {
+                    "@type": "Component",
+                    "name": "Synth Knobs",
+                    "category": "Control Component",
+                    "quantity": 30,
+                    "variety": [
+                        "Black",
+                        "White",
+                        "Numbered",
+                        "Pointer"
+                    ],
+                    "usage": "Used for potentiometers and rotary encoders on synthesizers"
+                }
+            ]
+        }
+    ],
+    "components": []
+}
