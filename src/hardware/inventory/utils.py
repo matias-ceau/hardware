@@ -5,9 +5,40 @@ import json
 from pathlib import Path
 import re
 import sqlite3
-from typing import Any
+from typing import Any, Protocol
 
 import requests
+
+# Default service endpoints
+DEFAULT_ENDPOINTS = {
+    "mistral": "http://localhost:11434/api/generate",
+    "ocr.space": "https://api.ocr.space/parse/image",
+    "local": "http://localhost:8000/extract",
+}
+
+
+class BaseDB(Protocol):
+    """Base protocol for database implementations."""
+
+    def has_file(self, f: str) -> bool:
+        """Check if file already exists in database."""
+        ...
+
+    def has_hash(self, h: str) -> bool:
+        """Check if hash already exists in database."""
+        ...
+
+    def add(self, entry: dict[str, Any], file: str, h: str) -> bool:
+        """Add new entry to database."""
+        ...
+
+    def normalize_type(self, type_str: str) -> str:
+        """Normalize component type string."""
+        return type_str.lower().strip()
+
+    def import_db(self, path: Path) -> None:
+        """Import data from another database file."""
+        ...
 
 
 def ocr_extract(path: Path, service_url: str) -> str:
@@ -37,7 +68,7 @@ def parse_fields(text: str) -> dict[str, Any]:
 
 
 def text_hash(text: str) -> str:
-    return hashlib.sha1(text.encode()).hexdigest()
+    return hashlib.sha1(text.encode("utf-8")).hexdigest()
 
 
 class JSONDB:
@@ -64,6 +95,18 @@ class JSONDB:
         self.path.write_text(json.dumps(self.entries))
         return True
 
+    def normalize_type(self, type_str: str) -> str:
+        """Normalize component type string."""
+        return type_str.lower().strip()
+
+    def import_db(self, path: Path) -> None:
+        """Import data from another database file."""
+        if path.exists():
+            imported_data = json.loads(path.read_text())
+            if isinstance(imported_data, list):
+                self.entries.extend(imported_data)
+                self.path.write_text(json.dumps(self.entries))
+
 
 class SQLiteDB:
     def __init__(self, path: Path) -> None:
@@ -73,15 +116,11 @@ class SQLiteDB:
         )
 
     def has_file(self, f: str) -> bool:
-        cur = self.conn.execute(
-            "SELECT 1 FROM components WHERE file = ? LIMIT 1", (f,)
-        )
+        cur = self.conn.execute("SELECT 1 FROM components WHERE file = ? LIMIT 1", (f,))
         return cur.fetchone() is not None
 
     def has_hash(self, h: str) -> bool:
-        cur = self.conn.execute(
-            "SELECT 1 FROM components WHERE hash = ? LIMIT 1", (h,)
-        )
+        cur = self.conn.execute("SELECT 1 FROM components WHERE hash = ? LIMIT 1", (h,))
         return cur.fetchone() is not None
 
     def add(self, entry: dict[str, Any], file: str, h: str) -> bool:
@@ -93,3 +132,19 @@ class SQLiteDB:
         )
         self.conn.commit()
         return True
+
+    def normalize_type(self, type_str: str) -> str:
+        """Normalize component type string."""
+        return type_str.lower().strip()
+
+    def import_db(self, path: Path) -> None:
+        """Import data from another database file."""
+        # For SQLite, we could implement importing from JSON or another SQLite file
+        if path.suffix.lower() == ".json":
+            imported_data = json.loads(path.read_text())
+            if isinstance(imported_data, list):
+                for entry in imported_data:
+                    file_path = entry.pop("file", "")
+                    hash_val = entry.pop("hash", "")
+                    if file_path and hash_val:
+                        self.add(entry, file_path, hash_val)
