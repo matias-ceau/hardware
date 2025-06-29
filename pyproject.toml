@@ -9,11 +9,17 @@ dependencies = [
     "requests>=2.32.4",
     "rich>=14.0.0",
     "types-requests>=2.32.4.20250611",
+    "mcp>=1.0.0",
+    "sentence-transformers>=3.0.0",
+    "openai>=1.0.0",
 ]
 
 [project.scripts]
 hardware = "hardware:main"
 hardware-inventory = "hardware:inventory.main"
+hardware-projects = "hardware.projects:main"
+hardware-resources = "hardware.resources:main"
+hardware-mcp-server = "hardware.mcp:main"
 
 [build-system]
 requires = ["hatchling"]
