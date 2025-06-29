@@ -88,169 +88,66 @@ def _show_rich_help() -> None:
 
 
 def _generate_completion_script(shell: str) -> None:
-    """Generate shell completion script."""
+    """Generate shell completion script using argcomplete."""
     if not argcomplete:
-        console.print("[red]Error:[/] argcomplete not available")
+        print("Error: argcomplete not available", file=sys.stderr)
         return
     
-    match shell:
-        case "bash":
-            script = '''# Hardware CLI completion for Bash
-# Add this to ~/.bashrc or source directly:
-# . <(hardware completion bash)
-
-_hardware_completion() {
-    COMPREPLY=()
-    local cur="${COMP_WORDS[COMP_CWORD]}"
-    local prev="${COMP_WORDS[COMP_CWORD-1]}"
+    # Create a parser that matches our CLI structure
+    parser = argparse.ArgumentParser(prog='hardware')
     
-    if [[ ${COMP_CWORD} -eq 1 ]]; then
-        COMPREPLY=($(compgen -W "inventory projects resources completion info help" -- ${cur}))
-        return 0
-    fi
+    # Add subcommands
+    subparsers = parser.add_subparsers(dest='module', help='Hardware management modules')
     
-    case "${COMP_WORDS[1]}" in
-        inventory)
-            if [[ ${COMP_CWORD} -eq 2 ]]; then
-                COMPREPLY=($(compgen -W "add list search show update delete stats config info ask chat test" -- ${cur}))
-            fi
-            ;;
-        projects)
-            if [[ ${COMP_CWORD} -eq 2 ]]; then
-                COMPREPLY=($(compgen -W "create list show bom add-component delete" -- ${cur}))
-            fi
-            ;;
-        resources)
-            if [[ ${COMP_CWORD} -eq 2 ]]; then
-                COMPREPLY=($(compgen -W "add search list extract show delete" -- ${cur}))
-            fi
-            ;;
-        completion)
-            if [[ ${COMP_CWORD} -eq 2 ]]; then
-                COMPREPLY=($(compgen -W "bash zsh fish" -- ${cur}))
-            fi
-            ;;
-    esac
-}
-
-complete -F _hardware_completion hardware'''
-            print(script)
-            
-        case "zsh":
-            script = '''# Hardware CLI completion for Zsh
-# Add this to ~/.zshrc or source directly:
-# . <(hardware completion zsh)
-
-_hardware() {
-    local context state line
+    # Inventory subcommand
+    inventory_parser = subparsers.add_parser('inventory', help='Component management')
+    inventory_subparsers = inventory_parser.add_subparsers(dest='command')
+    inventory_subparsers.add_parser('add', help='Add components from OCR')
+    inventory_subparsers.add_parser('list', help='List components')
+    inventory_subparsers.add_parser('search', help='Search components')
+    inventory_subparsers.add_parser('show', help='Show component details')
+    inventory_subparsers.add_parser('update', help='Update component')
+    inventory_subparsers.add_parser('delete', help='Delete component')
+    inventory_subparsers.add_parser('stats', help='Database statistics')
+    inventory_subparsers.add_parser('config', help='Configuration management')
+    inventory_subparsers.add_parser('info', help='System information')
+    inventory_subparsers.add_parser('ask', help='Natural language query')
+    inventory_subparsers.add_parser('chat', help='Interactive chat')
+    inventory_subparsers.add_parser('test', help='API and database tests')
     
-    _arguments -C \
-        '1: :->modules' \
-        '*: :->args'
+    # Projects subcommand  
+    projects_parser = subparsers.add_parser('projects', help='Project and BOM management')
+    projects_subparsers = projects_parser.add_subparsers(dest='command')
+    projects_subparsers.add_parser('create', help='Create project')
+    projects_subparsers.add_parser('list', help='List projects')
+    projects_subparsers.add_parser('show', help='Show project')
+    projects_subparsers.add_parser('bom', help='Show BOM')
+    projects_subparsers.add_parser('add-component', help='Add component to BOM')
+    projects_subparsers.add_parser('delete', help='Delete project')
     
-    case $state in
-        modules)
-            _values "modules" \
-                "inventory[Component management]" \
-                "projects[Project and BOM management]" \
-                "resources[Documentation management]" \
-                "completion[Shell completion]" \
-                "info[System information]"
-            ;;
-        args)
-            case $words[2] in
-                inventory)
-                    _values "inventory commands" \
-                        "add[Add components from OCR]" \
-                        "list[List components]" \
-                        "search[Search components]" \
-                        "show[Show component details]" \
-                        "update[Update component]" \
-                        "delete[Delete component]" \
-                        "stats[Database statistics]" \
-                        "config[Configuration management]" \
-                        "info[System information]" \
-                        "ask[Natural language query]" \
-                        "chat[Interactive chat]" \
-                        "test[API and database tests]"
-                    ;;
-                projects)
-                    _values "project commands" \
-                        "create[Create project]" \
-                        "list[List projects]" \
-                        "show[Show project]" \
-                        "bom[Show BOM]" \
-                        "add-component[Add component to BOM]" \
-                        "delete[Delete project]"
-                    ;;
-                resources)
-                    _values "resource commands" \
-                        "add[Add document]" \
-                        "search[Search documents]" \
-                        "list[List documents]" \
-                        "extract[Extract text]" \
-                        "show[Show document]" \
-                        "delete[Delete document]"
-                    ;;
-                completion)
-                    _values "shells" "bash" "zsh" "fish"
-                    ;;
-            esac
-            ;;
-    esac
-}
-
-compdef _hardware hardware'''
-            print(script)
-            
-        case "fish":
-            script = '''# Hardware CLI completion for Fish
-# Save to ~/.config/fish/completions/hardware.fish or source directly:
-# hardware completion fish | source
-
-# Main modules
-complete -c hardware -n "not __fish_seen_subcommand_from inventory projects resources completion info" -a "inventory" -d "Component management"
-complete -c hardware -n "not __fish_seen_subcommand_from inventory projects resources completion info" -a "projects" -d "Project and BOM management"  
-complete -c hardware -n "not __fish_seen_subcommand_from inventory projects resources completion info" -a "resources" -d "Documentation management"
-complete -c hardware -n "not __fish_seen_subcommand_from inventory projects resources completion info" -a "completion" -d "Shell completion"
-complete -c hardware -n "not __fish_seen_subcommand_from inventory projects resources completion info" -a "info" -d "System information"
-
-# Inventory subcommands
-complete -c hardware -n "__fish_seen_subcommand_from inventory" -a "add" -d "Add components from OCR"
-complete -c hardware -n "__fish_seen_subcommand_from inventory" -a "list" -d "List components"
-complete -c hardware -n "__fish_seen_subcommand_from inventory" -a "search" -d "Search components"
-complete -c hardware -n "__fish_seen_subcommand_from inventory" -a "show" -d "Show component details"
-complete -c hardware -n "__fish_seen_subcommand_from inventory" -a "update" -d "Update component"
-complete -c hardware -n "__fish_seen_subcommand_from inventory" -a "delete" -d "Delete component"
-complete -c hardware -n "__fish_seen_subcommand_from inventory" -a "stats" -d "Database statistics"
-complete -c hardware -n "__fish_seen_subcommand_from inventory" -a "config" -d "Configuration management"
-complete -c hardware -n "__fish_seen_subcommand_from inventory" -a "info" -d "System information"
-complete -c hardware -n "__fish_seen_subcommand_from inventory" -a "ask" -d "Natural language query"
-complete -c hardware -n "__fish_seen_subcommand_from inventory" -a "chat" -d "Interactive chat"
-complete -c hardware -n "__fish_seen_subcommand_from inventory" -a "test" -d "API and database tests"
-
-# Projects subcommands
-complete -c hardware -n "__fish_seen_subcommand_from projects" -a "create" -d "Create project"
-complete -c hardware -n "__fish_seen_subcommand_from projects" -a "list" -d "List projects"
-complete -c hardware -n "__fish_seen_subcommand_from projects" -a "show" -d "Show project"
-complete -c hardware -n "__fish_seen_subcommand_from projects" -a "bom" -d "Show BOM"
-complete -c hardware -n "__fish_seen_subcommand_from projects" -a "add-component" -d "Add component to BOM"
-complete -c hardware -n "__fish_seen_subcommand_from projects" -a "delete" -d "Delete project"
-
-# Resources subcommands  
-complete -c hardware -n "__fish_seen_subcommand_from resources" -a "add" -d "Add document"
-complete -c hardware -n "__fish_seen_subcommand_from resources" -a "search" -d "Search documents"
-complete -c hardware -n "__fish_seen_subcommand_from resources" -a "list" -d "List documents"
-complete -c hardware -n "__fish_seen_subcommand_from resources" -a "extract" -d "Extract text"
-complete -c hardware -n "__fish_seen_subcommand_from resources" -a "show" -d "Show document"
-complete -c hardware -n "__fish_seen_subcommand_from resources" -a "delete" -d "Delete document"
-
-# Completion shells
-complete -c hardware -n "__fish_seen_subcommand_from completion" -a "bash zsh fish" -d "Shell type"'''
-            print(script)
-            
-        case _:
-            console.print("[red]Error:[/] Unsupported shell. Available: bash, zsh, fish")
+    # Resources subcommand
+    resources_parser = subparsers.add_parser('resources', help='Documentation management')
+    resources_subparsers = resources_parser.add_subparsers(dest='command')
+    resources_subparsers.add_parser('add', help='Add document')
+    resources_subparsers.add_parser('search', help='Search documents')
+    resources_subparsers.add_parser('list', help='List documents')
+    resources_subparsers.add_parser('extract', help='Extract text')
+    resources_subparsers.add_parser('show', help='Show document')
+    resources_subparsers.add_parser('delete', help='Delete document')
+    
+    # Completion subcommand
+    completion_parser = subparsers.add_parser('completion', help='Shell completion')
+    completion_parser.add_argument('shell', choices=['bash', 'zsh', 'fish'], help='Shell type')
+    
+    # Info subcommand
+    subparsers.add_parser('info', help='System information')
+    
+    # Generate completion script using argcomplete
+    try:
+        script = argcomplete.shellcode(['hardware'], shell=shell, argcomplete_script='hardware')
+        print(script)
+    except Exception as e:
+        print(f"Error generating {shell} completion: {e}", file=sys.stderr)
 
 
 def _show_completion_help() -> None:
@@ -279,8 +176,9 @@ def _show_completion_help() -> None:
     console.print("[bold yellow]Features:[/]")
     console.print("• Command completion (inventory, projects, resources)")
     console.print("• Subcommand completion (add, list, search, etc.)")
-    console.print("• Context-aware suggestions")
-    console.print("• File path completion")
+    console.print("• Optional argument completion (--help, --db-sqlite, etc.)")
+    console.print("• File path completion for file arguments")
+    console.print("• Context-aware suggestions powered by argcomplete")
     console.print()
     
     console.print("[bold yellow]Examples:[/]")
