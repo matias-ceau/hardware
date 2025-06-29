@@ -318,6 +318,146 @@ def text_hash(text: str) -> str:
     return hashlib.sha1(text.encode("utf-8")).hexdigest()
 
 
+def parse_jsonld_components(imported_data: dict | list, source_path: Path) -> list[dict[str, Any]]:
+    """Parse components from JSON-LD or simple list format."""
+    components_to_add = []
+    
+    # Handle simple list format (legacy)
+    if isinstance(imported_data, list):
+        return imported_data
+    
+    # Handle JSON-LD format with @graph structure
+    elif isinstance(imported_data, dict) and "@graph" in imported_data:
+        graph = imported_data["@graph"]
+        if isinstance(graph, list):
+            for item in graph:
+                if item.get("@type") == "ComponentCollection":
+                    # Extract components from different collections
+                    for collection_key in ["resistors", "capacitors", "transistors", "ICs", "potentiometers", "passives", "components"]:
+                        if collection_key in item:
+                            collection = item[collection_key]
+                            if isinstance(collection, list):
+                                for component in collection:
+                                    normalized = normalize_jsonld_component(component, collection_key, source_path)
+                                    if normalized:
+                                        components_to_add.append(normalized)
+    
+    return components_to_add
+
+
+def normalize_jsonld_component(component: dict[str, Any], collection_type: str, source_path: Path) -> dict[str, Any] | None:
+    """Normalize a component from JSON-LD format to our internal format."""
+    if not isinstance(component, dict):
+        return None
+        
+    normalized = {}
+    
+    # Generate ID if not present
+    if "id" not in component:
+        component_type = component.get("@type", collection_type.rstrip("s")).lower()
+        # Create a unique ID based on component properties
+        if component_type == "resistor":
+            resistance = component.get("resistance", 0)
+            unit = component.get("resistanceUnit", "ohms")
+            normalized["id"] = f"r_{resistance}_{unit.replace('ohms', 'ohm')}"
+        elif component_type == "capacitor":
+            capacitance = component.get("capacitance", 0)
+            unit = component.get("capacitanceUnit", "F")
+            cap_type = component.get("capacitorType", "")
+            normalized["id"] = f"c_{capacitance}_{unit}_{cap_type}".replace(".", "_")
+        elif component_type == "transistor":
+            part_num = component.get("partNumber", "")
+            if part_num:
+                normalized["id"] = f"t_{part_num}"
+            else:
+                normalized["id"] = f"t_{hash(str(component)) % 10000}"
+        elif component_type == "ic":
+            part_num = component.get("partNumber", "")
+            ic_type = component.get("icType", "")
+            if part_num:
+                normalized["id"] = f"ic_{part_num}"
+            elif ic_type:
+                normalized["id"] = f"ic_{ic_type}_{hash(str(component)) % 10000}"
+            else:
+                normalized["id"] = f"ic_{hash(str(component)) % 10000}"
+        else:
+            normalized["id"] = f"{component_type}_{hash(str(component)) % 10000}"
+    else:
+        normalized["id"] = component["id"]
+    
+    # Map component type
+    component_type = component.get("@type", collection_type.rstrip("s")).lower()
+    normalized["type"] = component_type
+    
+    # Map common fields
+    normalized["quantity"] = component.get("quantity", 0)
+    normalized["qty"] = f"{normalized['quantity']} pcs" if normalized["quantity"] else ""
+    
+    # Map type-specific fields to create description and value
+    if component_type == "resistor":
+        resistance = component.get("resistance", 0)
+        unit = component.get("resistanceUnit", "ohms")
+        normalized["value"] = f"{resistance} {unit}"
+        normalized["description"] = f"Resistor {resistance} {unit}"
+        
+    elif component_type == "capacitor":
+        capacitance = component.get("capacitance", 0)
+        unit = component.get("capacitanceUnit", "F")
+        cap_type = component.get("capacitorType", "")
+        voltage = component.get("voltage", "")
+        voltage_unit = component.get("voltageUnit", "")
+        
+        # Convert capacitance to more readable format
+        if unit == "F" and capacitance < 1:
+            if capacitance >= 1e-6:
+                capacitance_str = f"{capacitance * 1e6} µF"
+            elif capacitance >= 1e-9:
+                capacitance_str = f"{capacitance * 1e9} nF"
+            elif capacitance >= 1e-12:
+                capacitance_str = f"{capacitance * 1e12} pF"
+            else:
+                capacitance_str = f"{capacitance} {unit}"
+        else:
+            capacitance_str = f"{capacitance} {unit}"
+            
+        normalized["value"] = capacitance_str
+        desc_parts = ["Capacitor", capacitance_str]
+        if cap_type:
+            desc_parts.append(f"({cap_type})")
+        if voltage and voltage_unit:
+            desc_parts.append(f"{voltage}{voltage_unit}")
+        normalized["description"] = " ".join(desc_parts)
+        
+    elif component_type in ["transistor", "ic"]:
+        part_num = component.get("partNumber", "")
+        ic_type = component.get("icType", "")
+        desc_parts = [component_type.upper()]
+        if part_num:
+            desc_parts.append(part_num)
+            normalized["partNumber"] = part_num
+        if ic_type:
+            desc_parts.append(f"({ic_type})")
+        normalized["description"] = " ".join(desc_parts)
+        normalized["value"] = part_num or ic_type or ""
+        
+    else:
+        # Generic component
+        desc = component.get("description", f"{component_type} component")
+        normalized["description"] = desc
+        normalized["value"] = component.get("value", "")
+    
+    # Copy other relevant fields
+    for field in ["partNumber", "package", "tolerance", "color", "usage", "voltage", "voltageUnit"]:
+        if field in component:
+            normalized[field] = component[field]
+    
+    # Add dummy file and hash for imported components
+    normalized["file"] = f"imported_from_{source_path.name}_{normalized['id']}"
+    normalized["hash"] = text_hash(json.dumps(normalized, sort_keys=True))
+    
+    return normalized
+
+
 class JSONDB:
     def __init__(self, path: Path) -> None:
         self.path = path
@@ -348,11 +488,16 @@ class JSONDB:
 
     def import_db(self, path: Path) -> None:
         """Import data from another database file."""
-        if path.exists():
-            imported_data = json.loads(path.read_text())
-            if isinstance(imported_data, list):
-                self.entries.extend(imported_data)
-                self.path.write_text(json.dumps(self.entries))
+        if not path.exists():
+            return
+            
+        imported_data = json.loads(path.read_text())
+        components_to_add = parse_jsonld_components(imported_data, path)
+        
+        # Add all collected components
+        if components_to_add:
+            self.entries.extend(components_to_add)
+            self.path.write_text(json.dumps(self.entries))
 
     def list_all(self, limit: int | None = None, offset: int = 0) -> list[dict[str, Any]]:
         """List all components with optional pagination."""
@@ -479,14 +624,19 @@ class SQLiteDB:
 
     def import_db(self, path: Path) -> None:
         """Import data from another database file."""
-        if path.suffix.lower() == ".json":
-            imported_data = json.loads(path.read_text())
-            if isinstance(imported_data, list):
-                for entry in imported_data:
-                    file_path = entry.pop("file", "")
-                    hash_val = entry.pop("hash", "")
-                    if file_path and hash_val:
-                        self.add(entry, file_path, hash_val)
+        if not path.exists():
+            return
+            
+        imported_data = json.loads(path.read_text())
+        components_to_add = parse_jsonld_components(imported_data, path)
+        
+        # Add all collected components
+        for entry in components_to_add:
+            # Extract file and hash for SQLite storage
+            file_path = entry.pop("file", "")
+            hash_val = entry.pop("hash", "")
+            if file_path and hash_val:
+                self.add(entry, file_path, hash_val)
 
     def list_all(self, limit: int | None = None, offset: int = 0) -> list[dict[str, Any]]:
         """List all components with optional pagination."""
