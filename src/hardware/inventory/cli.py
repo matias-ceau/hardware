@@ -273,14 +273,15 @@ def _stats_command(args: argparse.Namespace) -> None:
 
 def _config_command(args: argparse.Namespace) -> None:
     """Handle config command and subcommands."""
-    if args.config_subcommand == "show":
-        _config_show()
-    elif args.config_subcommand == "help":
-        _config_help()
-    elif args.config_subcommand == "paths":
-        _config_paths()
-    else:
-        console.print("[red]Unknown config subcommand. Use 'show', 'help', or 'paths'[/]")
+    match args.config_subcommand:
+        case "show":
+            _config_show()
+        case "help":
+            _config_help()
+        case "paths":
+            _config_paths()
+        case _:
+            console.print("[red]Unknown config subcommand. Use 'show', 'help', or 'paths'[/]")
 
 
 def _config_show() -> None:
@@ -735,28 +736,29 @@ DATABASE OPTIONS:
         parser.print_help()
         return
     
-    # Route to appropriate command handler
-    if args.command == "add":
-        _add_command(args)
-    elif args.command == "list":
-        _list_command(args)
-    elif args.command == "search":
-        _search_command(args)
-    elif args.command == "show":
-        _show_command(args)
-    elif args.command == "update":
-        _update_command(args)
-    elif args.command == "delete":
-        _delete_command(args)
-    elif args.command == "stats":
-        _stats_command(args)
-    elif args.command == "config":
-        _config_command(args)
-    elif args.command == "info":
-        _info_command(args)
-    elif args.command == "ask":
-        _ask_command(args)
-    elif args.command == "chat":
-        _chat_command(args)
-    else:
-        parser.print_help()
+    # Route to appropriate command handler using match/case
+    match args.command:
+        case "add":
+            _add_command(args)
+        case "list":
+            _list_command(args)
+        case "search":
+            _search_command(args)
+        case "show":
+            _show_command(args)
+        case "update":
+            _update_command(args)
+        case "delete":
+            _delete_command(args)
+        case "stats":
+            _stats_command(args)
+        case "config":
+            _config_command(args)
+        case "info":
+            _info_command(args)
+        case "ask":
+            _ask_command(args)
+        case "chat":
+            _chat_command(args)
+        case _:
+            parser.print_help()

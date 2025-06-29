@@ -121,20 +121,23 @@ class BaseDB(Protocol):
 
 def ocr_extract(path: Path, service: str) -> str:
     """Extract text from image using specified service."""
-    if service == "mistral":
-        return _mistral_ocr_extract(path, service)
-    elif service == "openai":
-        return _openai_ocr_extract(path, service)
-    elif service == "openrouter":
-        return _openrouter_ocr_extract(path, service)
-    else:
-        # Legacy services that use direct file upload (local, ocr.space)
-        service_url = DEFAULT_ENDPOINTS[service]
-        with path.open("rb") as fh:
-            resp = requests.post(service_url, files={"file": fh})
-        resp.raise_for_status()
-        data = resp.json()
-        return data.get("text") or data.get("ParsedResults", [{}])[0].get("ParsedText", "")
+    match service:
+        case "mistral":
+            return _mistral_ocr_extract(path, service)
+        case "openai":
+            return _openai_ocr_extract(path, service)
+        case "openrouter":
+            return _openrouter_ocr_extract(path, service)
+        case "local" | "ocr.space":
+            # Legacy services that use direct file upload
+            service_url = DEFAULT_ENDPOINTS[service]
+            with path.open("rb") as fh:
+                resp = requests.post(service_url, files={"file": fh})
+            resp.raise_for_status()
+            data = resp.json()
+            return data.get("text") or data.get("ParsedResults", [{}])[0].get("ParsedText", "")
+        case _:
+            raise ValueError(f"Unknown OCR service: {service}")
 
 
 def _encode_image_base64(image_path: Path) -> str:
