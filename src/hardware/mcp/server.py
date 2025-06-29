@@ -1,21 +1,32 @@
-"""MCP server for hardware management system.
+"""FastMCP server for hardware management system.
 
 Provides unified access to:
-- Inventory: Component search and management
-- Projects: (Future) Project and BOM management  
-- Resources: (Future) Documentation and reference search
+- Inventory: Component search and management with OCR
+- Projects: Project and BOM management  
+- Resources: Documentation and reference search
+
+Follows MCP best practices:
+- Async-first tool design
+- Typed parameters and returns using Pydantic
+- Proper error handling with context
+- Structured output with schemas
 """
 
 from __future__ import annotations
 
 import asyncio
 import logging
+import os
+import tempfile
 from pathlib import Path
 from typing import Any
 
+import httpx
+from pydantic import BaseModel, Field
+from mcp.server.fastmcp import FastMCP, Context
+from mcp.types import TextContent, Tool
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
-from mcp.types import Tool, TextContent
 
 from ..inventory import config as inventory_config
 from ..inventory import utils as inventory_utils
@@ -24,8 +35,104 @@ from ..inventory import utils as inventory_utils
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# FastMCP instance with proper metadata
+mcp = FastMCP(
+    "Hardware Management System",
+    description="Electronics component inventory, project management, and documentation tools with OCR capabilities",
+    dependencies=["sqlite3", "requests", "rich", "pathlib"],
+)
+
 # Global database instances
 inventory_db: inventory_utils.BaseDB | None = None
+
+
+# Pydantic models for type-safe tool parameters and responses
+
+class SearchParams(BaseModel):
+    """Parameters for component search."""
+    query: str = Field(description="Search query for components")
+    field: str | None = Field(None, description="Specific field to search in")
+    limit: int = Field(10, description="Maximum number of results", le=50)
+
+class ComponentResult(BaseModel):
+    """Single component result."""
+    id: str = Field(description="Component ID")
+    type: str = Field(description="Component type")
+    value: str | None = Field(None, description="Component value")
+    quantity: str | None = Field(None, description="Available quantity")
+    description: str | None = Field(None, description="Component description")
+
+class SearchResult(BaseModel):
+    """Search results with metadata."""
+    components: list[ComponentResult]
+    total_found: int = Field(description="Total number of matching components")
+    query: str = Field(description="Original search query")
+
+class StatsResult(BaseModel):
+    """Database statistics."""
+    total_components: int
+    total_quantity: int
+    component_types: dict[str, int]
+    most_common_type: str | None
+
+class ListParams(BaseModel):
+    """Parameters for listing components."""
+    limit: int = Field(20, description="Maximum number of components", le=100)
+    offset: int = Field(0, description="Number of components to skip", ge=0)
+
+class ComponentListResult(BaseModel):
+    """List of components with pagination."""
+    components: list[ComponentResult]
+    limit: int
+    offset: int
+    has_more: bool = Field(description="Whether there are more components available")
+
+# Multimodal tool models
+
+class OCRParams(BaseModel):
+    """Parameters for OCR processing."""
+    url: str | None = Field(None, description="Document URL")
+    file_path: str | None = Field(None, description="Local file path")
+    service: str = Field("mistral", description="OCR service to use")
+
+class OCRResult(BaseModel):
+    """OCR processing result."""
+    text: str = Field(description="Extracted text")
+    components_found: list[ComponentResult] = Field(default_factory=list, description="Parsed components")
+    service_used: str = Field(description="OCR service that was used")
+
+class WebSearchParams(BaseModel):
+    """Parameters for web search."""
+    query: str = Field(description="Search query")
+    max_results: int = Field(3, description="Maximum number of results", le=10)
+
+class WebSearchResult(BaseModel):
+    """Web search result."""
+    query: str
+    results: list[dict[str, Any]]
+    answer: str | None = Field(None, description="Direct answer if available")
+
+class EmbeddingParams(BaseModel):
+    """Parameters for text embedding."""
+    texts: list[str] = Field(description="Texts to embed")
+
+class EmbeddingResult(BaseModel):
+    """Embedding result."""
+    embeddings: list[list[float]] = Field(description="Text embeddings")
+    model_used: str = Field(description="Embedding model used")
+
+class ConvertParams(BaseModel):
+    """Parameters for document conversion."""
+    url: str | None = Field(None, description="Document URL")
+    file_path: str | None = Field(None, description="Local file path")
+    from_format: str | None = Field(None, description="Source format")
+    to_format: str = Field("markdown", description="Target format")
+
+class ConvertResult(BaseModel):
+    """Document conversion result."""
+    content: str = Field(description="Converted content")
+    from_format: str = Field(description="Source format")
+    to_format: str = Field(description="Target format")
 
 
 def initialize_inventory_db() -> inventory_utils.BaseDB:
@@ -121,6 +228,90 @@ TOOLS = [
         inputSchema={
             "type": "object",
             "properties": {}
+        }
+    ),
+    
+    # Multimodal tools
+    Tool(
+        name="ocr_process",
+        description="Extract text and components from images or PDFs using OCR",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "url": {
+                    "type": "string",
+                    "description": "URL to image or PDF document"
+                },
+                "file_path": {
+                    "type": "string", 
+                    "description": "Local file path to process"
+                },
+                "service": {
+                    "type": "string",
+                    "description": "OCR service to use (mistral, openai, openrouter, local, ocr.space)",
+                    "default": "mistral"
+                }
+            }
+        }
+    ),
+    Tool(
+        name="web_search",
+        description="Search the web for component datasheets, specifications, and suppliers",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "Search query for datasheets, components, or specifications"
+                },
+                "max_results": {
+                    "type": "integer",
+                    "description": "Maximum number of results to return",
+                    "default": 3
+                }
+            },
+            "required": ["query"]
+        }
+    ),
+    Tool(
+        name="text_embedding",
+        description="Generate embeddings for semantic component search",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "texts": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "List of texts to embed"
+                }
+            },
+            "required": ["texts"]
+        }
+    ),
+    Tool(
+        name="convert_document",
+        description="Convert documents between formats (PDF, images, markdown, etc.)",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "url": {
+                    "type": "string",
+                    "description": "URL to document"
+                },
+                "file_path": {
+                    "type": "string",
+                    "description": "Local file path"
+                },
+                "from_format": {
+                    "type": "string",
+                    "description": "Source format (auto-detected if not specified)"
+                },
+                "to_format": {
+                    "type": "string",
+                    "description": "Target format",
+                    "default": "markdown"
+                }
+            }
         }
     )
 ]
@@ -324,6 +515,204 @@ Use the inventory_* tools to interact with the component database.
     return [TextContent(type="text", text=response_text)]
 
 
+# Multimodal tool handlers
+
+async def handle_ocr_process(arguments: dict[str, Any]) -> list[TextContent]:
+    """Handle OCR processing requests."""
+    try:
+        url = arguments.get("url")
+        file_path = arguments.get("file_path")
+        service = arguments.get("service", "mistral")
+        
+        if not url and not file_path:
+            return [TextContent(type="text", text="Either url or file_path is required")]
+        
+        # Use existing OCR infrastructure
+        if file_path:
+            path = Path(file_path)
+        else:
+            # Download file from URL
+            async with httpx.AsyncClient() as client:
+                response = await client.get(url)
+                response.raise_for_status()
+                
+                # Save to temp file
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmp:
+                    tmp.write(response.content)
+                    path = Path(tmp.name)
+        
+        # Extract text using existing OCR system
+        text = inventory_utils.ocr_extract(path, service)
+        
+        # Parse for components
+        parsed_fields = inventory_utils.parse_fields(text)
+        components_found = []
+        if any(parsed_fields.get(field) for field in ["value", "qty", "type"]):
+            component = ComponentResult(
+                id="parsed",
+                type=parsed_fields.get("type", "unknown"),
+                value=parsed_fields.get("value"),
+                quantity=parsed_fields.get("qty"),
+                description=parsed_fields.get("description")
+            )
+            components_found.append(component)
+        
+        result_text = f"OCR Text (using {service}):\n{text}\n\n"
+        if components_found:
+            result_text += f"Components detected: {len(components_found)}\n"
+            for comp in components_found:
+                result_text += f"- {comp.type}: {comp.value} ({comp.quantity})\n"
+        else:
+            result_text += "No components detected in the text"
+        
+        return [TextContent(type="text", text=result_text)]
+        
+    except Exception as e:
+        return [TextContent(type="text", text=f"OCR processing failed: {str(e)}")]
+
+
+async def handle_web_search(arguments: dict[str, Any]) -> list[TextContent]:
+    """Handle web search requests."""
+    query = arguments.get("query", "")
+    max_results = arguments.get("max_results", 3)
+    
+    # Check for Tavily API key
+    tavily_api_key = os.getenv("TAVILY_API_KEY")
+    if not tavily_api_key:
+        return [TextContent(type="text", text="TAVILY_API_KEY environment variable not set")]
+    
+    try:
+        payload = {
+            "api_key": tavily_api_key,
+            "query": query,
+            "max_results": max_results,
+            "include_answer": True,
+            "include_raw_content": False
+        }
+        
+        async with httpx.AsyncClient(timeout=10) as client:
+            response = await client.post("https://api.tavily.com/search", json=payload)
+            response.raise_for_status()
+            
+        data = response.json()
+        
+        result_lines = [f"Web search results for: {query}\n"]
+        
+        if answer := data.get("answer"):
+            result_lines.append(f"Answer: {answer}\n")
+        
+        for i, result in enumerate(data.get("results", [])[:max_results], 1):
+            title = result.get("title", "No title")
+            content = result.get("content", "")[:150] + "..." if len(result.get("content", "")) > 150 else result.get("content", "")
+            url = result.get("url", "")
+            result_lines.append(f"{i}. {title}\n{content}\n{url}\n")
+        
+        return [TextContent(type="text", text="\n".join(result_lines))]
+        
+    except Exception as e:
+        return [TextContent(type="text", text=f"Web search failed: {str(e)}")]
+
+
+async def handle_text_embedding(arguments: dict[str, Any]) -> list[TextContent]:
+    """Handle text embedding requests."""
+    texts = arguments.get("texts", [])
+    
+    if not texts:
+        return [TextContent(type="text", text="No texts provided for embedding")]
+    
+    # Check for Jina API key first
+    jina_api_key = os.getenv("JINA_API_KEY")
+    
+    try:
+        if jina_api_key:
+            # Use Jina AI embeddings
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    "https://api.jina.ai/v1/embeddings",
+                    headers={"Authorization": f"Bearer {jina_api_key}"},
+                    json={"model": "jina-embeddings-v2-base-en", "input": texts}
+                )
+                response.raise_for_status()
+                
+            data = response.json()
+            embeddings = [item["embedding"] for item in data["data"]]
+            model_used = "jina-embeddings-v2-base-en"
+            
+        else:
+            # Fallback to local embeddings
+            try:
+                from sentence_transformers import SentenceTransformer
+                model = SentenceTransformer("all-MiniLM-L6-v2")
+                embeddings = model.encode(texts).tolist()
+                model_used = "all-MiniLM-L6-v2 (local)"
+            except ImportError:
+                return [TextContent(type="text", text="No JINA_API_KEY found and sentence-transformers not installed")]
+        
+        result_text = f"Generated embeddings for {len(texts)} texts using {model_used}\n"
+        result_text += f"Embedding dimensions: {len(embeddings[0]) if embeddings else 0}\n"
+        
+        # Include first few values for verification
+        if embeddings:
+            result_text += f"First embedding preview: [{', '.join(f'{x:.4f}' for x in embeddings[0][:5])}...]\n"
+        
+        return [TextContent(type="text", text=result_text)]
+        
+    except Exception as e:
+        return [TextContent(type="text", text=f"Embedding generation failed: {str(e)}")]
+
+
+async def handle_convert_document(arguments: dict[str, Any]) -> list[TextContent]:
+    """Handle document conversion requests."""
+    url = arguments.get("url")
+    file_path = arguments.get("file_path")
+    from_format = arguments.get("from_format")
+    to_format = arguments.get("to_format", "markdown")
+    
+    if not url and not file_path:
+        return [TextContent(type="text", text="Either url or file_path is required")]
+    
+    try:
+        # Get file content
+        if file_path:
+            content = Path(file_path).read_bytes()
+        else:
+            async with httpx.AsyncClient() as client:
+                response = await client.get(url)
+                response.raise_for_status()
+                content = response.content
+        
+        # Use pandoc for conversion
+        with tempfile.NamedTemporaryFile(delete=False) as tmp:
+            tmp.write(content)
+            tmp.flush()
+            
+            try:
+                import pypandoc
+                converted = pypandoc.convert_file(
+                    tmp.name,
+                    to=to_format,
+                    format=from_format
+                )
+                
+                # Truncate to 4KB limit
+                if len(converted) > 4000:
+                    converted = converted[:4000] + "\n... (truncated)"
+                
+                result_text = f"Document converted to {to_format}:\n\n{converted}"
+                
+            except ImportError:
+                result_text = "pypandoc not installed. Install with: pip install pypandoc"
+            except Exception as e:
+                result_text = f"Conversion failed: {str(e)}"
+            finally:
+                os.unlink(tmp.name)
+        
+        return [TextContent(type="text", text=result_text)]
+        
+    except Exception as e:
+        return [TextContent(type="text", text=f"Document conversion failed: {str(e)}")]
+
+
 # Tool dispatch map
 TOOL_HANDLERS = {
     "inventory_search": handle_inventory_search,
@@ -331,6 +720,11 @@ TOOL_HANDLERS = {
     "inventory_list": handle_inventory_list,
     "inventory_stats": handle_inventory_stats,
     "system_info": handle_system_info,
+    # Multimodal tools
+    "ocr_process": handle_ocr_process,
+    "web_search": handle_web_search,
+    "text_embedding": handle_text_embedding,
+    "convert_document": handle_convert_document,
 }
 
 
