@@ -24,7 +24,7 @@ def test_ocr_extract_and_parse(monkeypatch, tmp_path):
         return DummyResp({"ParsedResults": [{"ParsedText": "100uF 5 pcs $1.50"}]})
 
     monkeypatch.setattr("requests.post", fake_post)
-    text = ocr_extract(img, "http://example.com")
+    text = ocr_extract(img, "ocr.space")
     assert "100uF" in text
 
     data = parse_fields(text)

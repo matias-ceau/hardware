@@ -300,7 +300,7 @@ def _openrouter_ocr_extract(path: Path, service: str) -> str:
 def parse_fields(text: str) -> dict[str, Any]:
     field_patterns = {
         "value": r"([0-9\.]+\s*(?:[µu]F|nF|pF|kΩ|Ω|mH|uH|%))",
-        "qty": r"([0-9]+)\s*(?:pcs?)",
+        "qty": r"([0-9]+)\s*(?:pcs?|pieces?)",
         # price requires a currency symbol to avoid matching numeric values
         "price": r"([€$£]\s*[0-9]+\.?[0-9]*)",
     }
@@ -610,7 +610,15 @@ class SQLiteDB:
     def add(self, entry: dict[str, Any], file: str, h: str) -> bool:
         if self.has_file(file) or self.has_hash(h):
             return False
-        component_id = entry.get("id", "")
+        
+        # Generate ID if not provided
+        component_id = entry.get("id")
+        if not component_id:
+            import uuid
+            component_id = str(uuid.uuid4())[:8]
+            entry = entry.copy()
+            entry["id"] = component_id
+        
         self.conn.execute(
             "INSERT INTO components (id, file, hash, data) VALUES (?,?,?,?)",
             (component_id, file, h, json.dumps(entry)),
