@@ -42,6 +42,12 @@ def _resolve_db_paths(args: argparse.Namespace) -> utils.BaseDB:
         sys.exit(1)
 
 
+def _show_db_path(db: utils.BaseDB, quiet: bool = False) -> None:
+    """Show the database path for transparency."""
+    if not quiet and hasattr(db, 'db_path'):
+        console.print(f"[dim]Database: {db.db_path}[/]")
+
+
 def _review(candidate: dict, db: utils.BaseDB, service: str) -> dict | None:
     table = Table()
     table.add_column("Field")
@@ -175,6 +181,7 @@ def _add_command(args: argparse.Namespace) -> None:
 def _list_command(args: argparse.Namespace) -> None:
     """List components in the database."""
     db = _resolve_db_paths(args)
+    _show_db_path(db)
     
     components = db.list_all(limit=args.limit, offset=args.offset)
     
@@ -205,6 +212,7 @@ def _list_command(args: argparse.Namespace) -> None:
 def _search_command(args: argparse.Namespace) -> None:
     """Search components in the database."""
     db = _resolve_db_paths(args)
+    _show_db_path(db)
     
     results = db.search(args.query, args.field)
     
@@ -308,6 +316,7 @@ def _delete_command(args: argparse.Namespace) -> None:
 def _stats_command(args: argparse.Namespace) -> None:
     """Show database statistics."""
     db = _resolve_db_paths(args)
+    _show_db_path(db)
     
     stats = db.get_stats()
     
@@ -467,6 +476,36 @@ def _info_command(args: argparse.Namespace) -> None:
         console.print("  Create ~/.component_loader.toml or ./cfg.toml for custom settings")
     
     console.print(f"Active service: {cfg.get('main', {}).get('service', 'mistral')}")
+    
+    # Current database location (PROMINENT)
+    console.print(f"\n[bold yellow]📁 CURRENT DATABASE LOCATION:[/]")
+    sqlite_path, json_path = config.resolve_db_paths()
+    
+    if sqlite_path:
+        sqlite_file = Path(sqlite_path)
+        if sqlite_file.exists():
+            console.print(f"[bold green]✓ SQLite: {sqlite_path}[/]")
+            # Show file size and last modified
+            stat = sqlite_file.stat()
+            size_kb = stat.st_size / 1024
+            from datetime import datetime
+            last_mod = datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M")
+            console.print(f"  Size: {size_kb:.1f} KB, Modified: {last_mod}")
+        else:
+            console.print(f"[yellow]⚠ SQLite: {sqlite_path} (will be created)[/]")
+    
+    if json_path:
+        json_file = Path(json_path)
+        if json_file.exists():
+            console.print(f"[green]✓ JSON-LD: {json_path}[/]")
+            stat = json_file.stat()
+            size_kb = stat.st_size / 1024
+            from datetime import datetime
+            last_mod = datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M")
+            console.print(f"  Size: {size_kb:.1f} KB, Modified: {last_mod}")
+    
+    if not sqlite_path and not json_path:
+        console.print("[red]✗ No database configured![/]")
     
     # Database backends
     console.print(f"\n[yellow]Database Backends:[/]")

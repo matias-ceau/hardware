@@ -461,6 +461,7 @@ def normalize_jsonld_component(component: dict[str, Any], collection_type: str, 
 class JSONDB:
     def __init__(self, path: Path) -> None:
         self.path = path
+        self.db_path = str(path)  # For consistent interface
         if path.exists():
             self.entries = json.loads(path.read_text())
         else:
@@ -593,6 +594,7 @@ class SQLiteDB:
     """
     
     def __init__(self, path: Path) -> None:
+        self.db_path = str(path)
         self.conn = sqlite3.connect(path)
         self.conn.execute(
             "CREATE TABLE IF NOT EXISTS components (id TEXT PRIMARY KEY, file TEXT, hash TEXT, data TEXT)"

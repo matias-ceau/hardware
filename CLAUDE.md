@@ -36,11 +36,22 @@ CLI commands defined in pyproject.toml:
 3. **Database Abstraction** (`src/hardware/inventory/utils.py`): Protocol-based design supporting both SQLite and JSON-LD storage backends
 4. **Data Processing**: OCR text extraction and component field parsing with preprocessing/postprocessing hooks
 
+### Database Location & Auto-Discovery
+
+**CRITICAL**: The system automatically discovers your database in this priority order:
+
+1. **`.hardware-inventory.db`** in current directory (project-specific, recommended)
+2. **`$XDG_DATA_HOME/hardware/inventory-main.db`** (default: `~/.local/share/hardware/inventory-main.db`)  
+3. **Legacy files**: `metadata.db`, `components.jsonld` in current directory
+4. **Config files**: Custom paths in `~/.component_loader.toml` or `./cfg.toml`
+
+**To find which database is active**: `uv run hardware inventory info`
+
 ### Database Backends
 
 The system supports two storage formats through a Protocol interface with full CRUD operations:
 
-- **SQLiteDB**: Structured relational storage with JSON data column for flexibility
+- **SQLiteDB**: Structured relational storage with JSON data column for flexibility (primary)
 - **JSONDB**: JSON-LD format storage (initial database in `data/electronics_updated_1.jsonld` can be imported for testing)
 
 Both backends support:

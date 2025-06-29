@@ -96,12 +96,31 @@ hardware completion fish    # Instructions for Fish
 | hardware resources | Documentation and reference management |
 | hardware-mcp-server | MCP server for LLM integration |
 
-### Database Auto-Discovery
+## 📁 Database Location & Discovery
 
-The system automatically finds your database:
-1. .hardware-inventory.db in current directory
-2. $XDG_DATA_HOME/hardware/inventory-main.db (fallback)
-3. Legacy files: metadata.db, components.jsonld
+**IMPORTANT:** The system automatically discovers your database in this order:
+
+### 🔍 Discovery Priority
+1. **`.hardware-inventory.db`** in current directory (primary)
+2. **`$XDG_DATA_HOME/hardware/inventory-main.db`** (default: `~/.local/share/hardware/inventory-main.db`)
+3. **Legacy files**: `metadata.db`, `components.jsonld` in current directory
+4. **Config files**: Custom paths in `~/.component_loader.toml` or `./cfg.toml`
+
+### 🗂️ Find Your Database Location
+```bash
+# Check which database is being used
+uv run hardware inventory info
+
+# List components (shows database path)
+uv run hardware inventory list --limit 1
+```
+
+### 📍 Common Database Locations
+- **Project-specific**: `./hardware-inventory.db` (recommended for projects)
+- **User-wide**: `~/.local/share/hardware/inventory-main.db` (default)
+- **Custom**: Set in config files or use `--db-sqlite path/to/db.sqlite`
+
+**💡 Tip**: Use project-specific databases by creating `.hardware-inventory.db` in your project folder
 
 ### OCR Services
 
