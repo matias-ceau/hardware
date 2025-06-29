@@ -21,7 +21,7 @@ hardware = "hardware:main"
 hardware-inventory = "hardware.inventory.cli:main"
 hardware-projects = "hardware.projects.cli:main"
 hardware-resources = "hardware.resources.cli:main"
-hardware-mcp-server = "hardware.mcp.server:main"
+hardware-mcp-server = "hardware.mcp.server:run_server"
 
 [build-system]
 requires = ["hatchling"]

@@ -15,6 +15,11 @@ from rich.table import Table
 from rich.syntax import Syntax
 from rich.panel import Panel
 
+try:
+    import argcomplete
+except ImportError:
+    argcomplete = None
+
 from . import config
 from . import utils
 
@@ -23,11 +28,8 @@ console = Console()
 
 
 def _resolve_db_paths(args: argparse.Namespace) -> utils.BaseDB:
-    """Resolve database paths with new auto-discovery logic."""
-    sqlite_path, json_path = config.resolve_db_paths(
-        db_sqlite=args.db_sqlite,
-        db_json=args.db_json
-    )
+    """Resolve database paths with auto-discovery logic."""
+    sqlite_path, json_path = config.resolve_db_paths()
     
     # SQLite is now the primary database
     if sqlite_path:
@@ -66,22 +68,79 @@ def _process(
     pre: list[str],
     post: list[str],
 ) -> None:
+    """Process a file using OCR extraction."""
     if args.resume and db.has_file(str(path)):
         return
+    
     text = utils.ocr_extract(path, args.service)
     text_hash = utils.text_hash(text)
     if db.has_hash(text_hash):
         return
+    
     for t in pre:
         fn = getattr(utils, t, lambda x: x)
         text = fn(text)
+    
     candidate = utils.parse_fields(text)
     entry = _review(candidate, db, args.service)
+    
     if entry:
         for t in post:
             fn = getattr(utils, t, lambda x: x)
             entry = fn(entry)
         db.add(entry, str(path), text_hash)
+
+
+def _import_command(args: argparse.Namespace) -> None:
+    """Import components from another database file."""
+    db = _resolve_db_paths(args)
+    import_path = Path(args.path)
+    
+    if not import_path.exists():
+        console.print(f"[red]Import file not found: {import_path}[/]")
+        sys.exit(1)
+    
+    # Show what will be imported
+    console.print(f"[yellow]Importing from:[/] {import_path}")
+    
+    # For JSON-LD, show a preview of what will be imported
+    if import_path.suffix.lower() in ['.json', '.jsonld']:
+        try:
+            import json
+            data = json.loads(import_path.read_text())
+            if '@graph' in data:
+                # Count components in JSON-LD structure
+                component_count = 0
+                for graph_item in data['@graph']:
+                    if isinstance(graph_item, dict):
+                        for key in ['resistors', 'capacitors', 'transistors', 'ICs', 'potentiometers', 'passives', 'components']:
+                            if key in graph_item:
+                                component_count += len(graph_item[key])
+                console.print(f"[cyan]Will import approximately {component_count} components from JSON-LD[/]")
+            elif isinstance(data, list):
+                console.print(f"[cyan]Will import {len(data)} components from JSON list[/]")
+        except Exception:
+            console.print("[cyan]Will import components from file[/]")
+    
+    # Confirm import unless forced
+    if not args.force:
+        from rich.prompt import Confirm
+        if not Confirm.ask("Continue with import?"):
+            console.print("[yellow]Import cancelled[/]")
+            return
+    
+    # Perform import
+    try:
+        db.import_db(import_path)
+        console.print("[green]✓ Import completed successfully[/]")
+        
+        # Show updated stats
+        stats = db.get_stats()
+        console.print(f"Database now contains {stats['total_components']} components")
+        
+    except Exception as e:
+        console.print(f"[red]Import failed: {e}[/]")
+        sys.exit(1)
 
 
 def _add_command(args: argparse.Namespace) -> None:
@@ -610,6 +669,42 @@ You can help with questions about finding components, checking availability, or 
         console.print("[red]Error: openai package not installed. Install with: uv add openai[/]")
 
 
+def _test_command(args: argparse.Namespace) -> None:
+    """Handle test command for API and database testing."""
+    try:
+        from .test_api import main as test_main
+        import sys
+        
+        # Build argv for test_api module
+        test_argv = []
+        if args.all:
+            test_argv.append("--all")
+        if args.api_keys:
+            test_argv.append("--api-keys")
+        if args.database:
+            test_argv.append("--database")
+        if args.parsing:
+            test_argv.append("--parsing")
+        if args.ocr:
+            test_argv.append("--ocr")
+        if args.search:
+            test_argv.append("--search")
+        
+        # Replace sys.argv temporarily
+        original_argv = sys.argv[:]
+        sys.argv = ["hardware-inventory test"] + test_argv
+        
+        try:
+            test_main()
+        finally:
+            sys.argv = original_argv
+            
+    except ImportError:
+        console.print("[red]Error: Test module not available[/]")
+    except Exception as e:
+        console.print(f"[red]Error running tests: {e}[/]")
+
+
 def _check_api_keys() -> dict[str, bool]:
     """Check for API keys in environment variables."""
     api_keys = {}
@@ -666,8 +761,8 @@ DATABASE OPTIONS:
         prog="hardware-inventory",
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
-    parser.add_argument("--db-sqlite", help="SQLite database path")
-    parser.add_argument("--db-json", help="JSON database path")
+    # Database auto-discovery (legacy --db-sqlite/--db-json removed)
+    # Databases are now auto-discovered: .hardware-inventory.db > XDG_DATA_HOME fallback
     
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
     
@@ -683,6 +778,11 @@ DATABASE OPTIONS:
                            help="File extensions to process")
     add_parser.add_argument("--continue", dest="resume", action="store_true",
                            help="Resume processing, skip already processed files")
+
+    # Import command (database import)
+    import_parser = subparsers.add_parser("import", help="Import components from another database")
+    import_parser.add_argument("path", help="Path to database file (JSON, JSON-LD, or SQLite)")
+    import_parser.add_argument("--force", action="store_true", help="Force import without confirmation")
     
     # List command
     list_parser = subparsers.add_parser("list", help="List components in database")
@@ -730,6 +830,19 @@ DATABASE OPTIONS:
     chat_parser = subparsers.add_parser("chat", help="Interactive chat mode for inventory")
     chat_parser.add_argument("--model", default="gpt-4o", help="LLM model to use")
     
+    # Test command
+    test_parser = subparsers.add_parser("test", help="Run API and database tests")
+    test_parser.add_argument("--all", action="store_true", help="Run all tests")
+    test_parser.add_argument("--api-keys", action="store_true", help="Test API key availability")
+    test_parser.add_argument("--database", action="store_true", help="Test database operations")
+    test_parser.add_argument("--parsing", action="store_true", help="Test OCR text parsing")
+    test_parser.add_argument("--ocr", action="store_true", help="Interactive OCR testing")
+    test_parser.add_argument("--search", action="store_true", help="Test component search")
+    
+    # Enable argcomplete if available
+    if argcomplete:
+        argcomplete.autocomplete(parser)
+    
     args = parser.parse_args(argv)
     
     if not args.command:
@@ -740,6 +853,8 @@ DATABASE OPTIONS:
     match args.command:
         case "add":
             _add_command(args)
+        case "import":
+            _import_command(args)
         case "list":
             _list_command(args)
         case "search":
@@ -760,5 +875,7 @@ DATABASE OPTIONS:
             _ask_command(args)
         case "chat":
             _chat_command(args)
+        case "test":
+            _test_command(args)
         case _:
             parser.print_help()
