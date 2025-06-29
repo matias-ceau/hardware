@@ -12,6 +12,11 @@ from rich.console import Console
 from rich.table import Table
 from rich.prompt import Confirm, Prompt
 
+try:
+    import argcomplete
+except ImportError:
+    argcomplete = None
+
 console = Console()
 
 
@@ -70,6 +75,10 @@ EXAMPLES:
     delete_parser = subparsers.add_parser("delete", help="Delete project")
     delete_parser.add_argument("project_id", help="Project ID")
     delete_parser.add_argument("--force", action="store_true", help="Skip confirmation")
+    
+    # Enable argcomplete if available
+    if argcomplete:
+        argcomplete.autocomplete(parser)
     
     args = parser.parse_args(argv)
     

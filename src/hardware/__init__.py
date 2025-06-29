@@ -103,6 +103,7 @@ def _generate_completion_script(shell: str) -> None:
     inventory_parser = subparsers.add_parser('inventory', help='Component management')
     inventory_subparsers = inventory_parser.add_subparsers(dest='command')
     inventory_subparsers.add_parser('add', help='Add components from OCR')
+    inventory_subparsers.add_parser('import', help='Import from database')
     inventory_subparsers.add_parser('list', help='List components')
     inventory_subparsers.add_parser('search', help='Search components')
     inventory_subparsers.add_parser('show', help='Show component details')

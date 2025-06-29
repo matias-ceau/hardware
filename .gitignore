@@ -1,8 +1,70 @@
-version = 1
-revision = 2
-requires-python = ">=3.13"
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
 
-[[package]]
-name = "hardware"
-version = "0.1.0"
-source = { editable = "." }
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Testing
+.coverage
+.pytest_cache/
+.tox/
+htmlcov/
+
+# Database files (temporary/test)
+*.db
+*.sqlite
+*.sqlite3
+components.json
+test_inventory.json
+
+# Temporary files
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# Generated test files
+tests/data/*.pdf
+tests/data/test-file-*.png
+tests/data/test_file-*.png
+
+# API keys and secrets
+.env.local
+.env.production
+config.local.toml
+
+# Generated documentation
+docs/_build/
+site/

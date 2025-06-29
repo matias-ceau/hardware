@@ -75,6 +75,9 @@ uv run pytest -k "test_name"    # Run tests matching pattern
 ```bash
 # Process images/PDFs for component extraction (via main hardware CLI)
 uv run hardware inventory add <path> [options]
+# note that the next 2 should be equibvalent to the first one (and uv run is not necessary for application in case they are built/installed.
+hardware inventory add <path> [options]
+hardware-inventory add <path> [options]
 
 # Direct inventory CLI access with full CRUD operations
 uv run hardware-inventory <command> [options]
@@ -86,8 +89,9 @@ uv run hardware-inventory <command> [options]
 uv run hardware-inventory add <path> [options]
   --service mistral|openai|openrouter|local|ocr.space    # Choose OCR service
   --continue                           # Resume processing, skip already processed files
-  --import-db path/to/existing.db      # Import from another database
+  --import-db path/to/existing.db      # Import from existing database
   --ext .png,.jpg,.jpeg,.pdf           # File extensions to process
+  --comment "<comment>"                  # Optionnal natural language ressource corresponding to the data in <path>
 
 # List components in database
 uv run hardware-inventory list [options]
@@ -124,7 +128,13 @@ uv run hardware-inventory info          # Health check and system info
 
 # Database backend options (for all commands):
 # --db-sqlite path/to/db.sqlite       # Use SQLite backend
-# --db-json path/to/data.jsonld       # Use JSON-LD backend
+
+# Export database to other format (not implemented) with full compatibility
+uv run hardware-inventory dump [<ext>|-o <path>.ext>]
+# Default dump JSON/JSON-LD, CSV, XML, parquet, RDF, turtle, markdown
+
+# Export database or reports in a specified format (no equivalence in terms of information)
+uv run hardware-inventory export [--interactive/-i] [ <choice> [<path>.ext | --type <ext>]]
 ```
 
 #### Projects Management Commands
@@ -152,6 +162,14 @@ uv run hardware-resources extract datasheet.pdf
 ```bash
 # Start MCP server for LLM integration
 uv run hardware-mcp-server
+```
+
+#### Shell Completion
+```bash
+# Setup autocompletion for your shell
+uv run hardware completion bash     # Bash setup instructions
+uv run hardware completion zsh      # Zsh setup instructions  
+uv run hardware completion fish     # Fish setup instructions
 ```
 
 #### Usage Examples

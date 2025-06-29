@@ -1,23 +1,35 @@
 # Hardware Management System
 
-A comprehensive Python-based system for managing electronics hardware projects, components, and documentation with AI-powered features.
+A comprehensive Python-based system for managing electronics hardware projects, components, and documentation with AI-powered multimodal capabilities.
 
-## Features
+## 🚀 Features
 
-### Component Inventory
-- OCR-based extraction from images and PDFs using multiple AI vision services
-- Full CRUD operations with SQLite and JSON-LD storage backends
-- Natural language queries with integrated LLM chat interface
-- Auto-discovery of databases with XDG compliance
-- Multi-service OCR support (Mistral, OpenAI, OpenRouter, local)
+### 🔧 Component Inventory
+- **OCR-based extraction** from images and PDFs using multiple AI vision services (Mistral, OpenAI, OpenRouter)
+- **Full CRUD operations** with SQLite and JSON-LD storage backends  
+- **Natural language queries** with integrated LLM chat interface
+- **Auto-discovery databases** with XDG compliance (`.hardware-inventory.db`)
+- **Interactive API testing** for all OCR services
+- **Shell completion** for bash/zsh/fish
 
-### Project Management (Coming Soon)
-- Project creation and tracking
-- Bill of Materials (BOM) management
-- Component allocation and availability checking
+### 🤖 MCP Server (Model Context Protocol)
+- **Multimodal MCP server** for Claude integration with 9 tools:
+  - **Inventory tools**: search, list, stats, component details
+  - **OCR processing**: extract components from images/PDFs  
+  - **Web search**: find datasheets and specs (Tavily API)
+  - **Text embeddings**: semantic search (Jina AI + local fallback)
+  - **Document conversion**: format conversion (Pandoc)
+- **Async-first design** with typed parameters and error handling
+- **Environment-based configuration** with graceful fallbacks
 
-### Resource Library (Coming Soon)
-- Datasheet and documentation management
+### 📋 Project Management (Framework Ready)
+- Project creation and tracking infrastructure
+- Bill of Materials (BOM) management foundation
+- Component allocation system
+
+### 📚 Resource Library (Framework Ready)  
+- Datasheet and documentation management structure
+- Search and reference system foundation
 - Semantic search with embeddings
 - Physics and electronics knowledge base
 - Circuit reference collection
@@ -54,6 +66,23 @@ uv run hardware inventory chat
 
 # System health check
 uv run hardware inventory info
+```
+
+### Shell Completion
+
+Enable autocompletion for faster CLI usage:
+
+```bash
+# Setup completion for your shell
+hardware completion bash    # Instructions for Bash
+hardware completion zsh     # Instructions for Zsh  
+hardware completion fish    # Instructions for Fish
+
+# After setup, get autocompletion for:
+# - Commands: inventory, projects, resources
+# - Subcommands: add, list, search, etc.
+# - Options: --help, --service, --limit
+# - File paths and arguments
 ```
 
 ## Documentation
