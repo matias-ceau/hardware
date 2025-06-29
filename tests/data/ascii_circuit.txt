@@ -1,0 +1,26 @@
+              VCC (+5V)
+                |
+                |
+            [10kΩ Resistor]
+                |
+                |
+         +------+------+
+         |             |
+    [100µF Cap]    [LM555 IC]
+         |        Pin 3 Out
+         |             |
+        GND        [220Ω Res]
+                       |
+                   [LED 5mm]
+                       |
+                      GND
+
+Components List:
+================
+• 10kΩ Resistor (1/4W) - 5 pieces - $0.05 each
+• 100µF Electrolytic Capacitor (25V) - 2 pcs - $0.15 each  
+• LM555 Timer IC (DIP-8) - 1 piece - $0.75 each
+• 220Ω Resistor (1/4W) - 3 pieces - $0.03 each
+• Red LED 5mm - 2 pcs - $0.08 each
+
+Total: 13 components, $1.21 total value

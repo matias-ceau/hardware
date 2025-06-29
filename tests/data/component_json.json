@@ -1,0 +1,43 @@
+[
+  {
+    "id": "r001",
+    "type": "resistor",
+    "value": "10kΩ",
+    "tolerance": "±5%",
+    "package": "through-hole",
+    "quantity": "25 pieces",
+    "price": "$0.05 each",
+    "description": "Carbon film resistor 10000 ohms"
+  },
+  {
+    "id": "c001", 
+    "type": "capacitor",
+    "value": "100µF",
+    "voltage": "25V",
+    "capacitorType": "electrolytic",
+    "package": "radial",
+    "quantity": "10 pcs",
+    "price": "$0.15 each",
+    "description": "Electrolytic capacitor 100 microfarads"
+  },
+  {
+    "id": "ic001",
+    "type": "ic", 
+    "partNumber": "LM555",
+    "icType": "timer",
+    "package": "DIP-8",
+    "quantity": "5 pieces",
+    "price": "$0.75 each",
+    "description": "555 timer IC 8-pin dual inline package"
+  },
+  {
+    "id": "led001",
+    "type": "led",
+    "color": "red",
+    "size": "5mm",
+    "package": "T1-3/4",
+    "quantity": "20 pcs",
+    "price": "$0.08 each", 
+    "description": "Red LED 5mm standard brightness"
+  }
+]

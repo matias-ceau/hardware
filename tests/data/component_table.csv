@@ -1,0 +1,13 @@
+Component Type,Value,Package,Quantity,Price Each,Total Price
+Resistor,1kΩ,Through-hole,25 pcs,$0.03,$0.75
+Resistor,4.7kΩ,Through-hole,15 pieces,$0.04,$0.60
+Resistor,10kΩ,Through-hole,20 pcs,$0.05,$1.00
+Capacitor,22pF,Ceramic,30 pieces,$0.02,$0.60
+Capacitor,100nF,Film,12 pcs,$0.08,$0.96
+Capacitor,100µF,Electrolytic,8 pieces,$0.15,$1.20
+IC,LM555,DIP-8,5 pcs,$0.75,$3.75
+IC,LM358,DIP-8,3 pieces,$0.65,$1.95
+Transistor,BC547,TO-92,10 pcs,$0.12,$1.20
+Transistor,BC557,TO-92,10 pieces,$0.12,$1.20
+Diode,1N4148,DO-35,50 pcs,$0.02,$1.00
+LED,Red 5mm,T1-3/4,20 pieces,$0.08,$1.60

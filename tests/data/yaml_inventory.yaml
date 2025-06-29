@@ -1,0 +1,52 @@
+inventory:
+  name: "Electronics Component Stock"
+  last_updated: "2024-01-15"
+  
+resistors:
+  - value: "1kΩ"
+    tolerance: "±5%"
+    quantity: "30 pieces"
+    price: "$0.03 each"
+    type: "carbon film"
+    
+  - value: "10kΩ" 
+    tolerance: "±5%"
+    quantity: "25 pcs"
+    price: "$0.05 each"
+    type: "carbon film"
+    
+capacitors:
+  - value: "100µF"
+    voltage: "25V"
+    type: "electrolytic"
+    quantity: "8 pieces"
+    price: "$0.15 each"
+    
+  - value: "22pF"
+    voltage: "50V" 
+    type: "ceramic"
+    quantity: "40 pcs"
+    price: "$0.02 each"
+    
+semiconductors:
+  - part: "LM555"
+    type: "timer IC"
+    package: "DIP-8"
+    quantity: "6 pieces"
+    price: "$0.75 each"
+    
+  - part: "BC547"
+    type: "NPN transistor"
+    package: "TO-92"
+    quantity: "15 pcs"
+    price: "$0.12 each"
+    
+  - part: "1N4148"
+    type: "switching diode"
+    package: "DO-35"
+    quantity: "50 pieces"
+    price: "$0.02 each"
+
+summary:
+  total_components: 174
+  total_value: "$8.94"

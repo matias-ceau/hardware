@@ -1,0 +1,22 @@
+graph TD
+    A[VCC +5V] --> B[10kΩ Resistor]
+    B --> C[LM555 Timer IC]
+    C --> D[100µF Capacitor]
+    D --> E[GND]
+    
+    C --> F[LED Red 5mm]
+    F --> G[220Ω Resistor]
+    G --> E
+    
+    C --> H[Speaker 8Ω]
+    H --> I[BC547 Transistor]
+    I --> E
+    
+    subgraph "Components"
+        J["10kΩ Resistor - 5 pcs - $0.05 each"]
+        K["220Ω Resistor - 10 pcs - $0.03 each"]
+        L["100µF 25V Capacitor - 3 pcs - $0.15 each"]
+        M["LM555 Timer IC - 2 pcs - $0.75 each"]
+        N["LED Red 5mm - 8 pcs - $0.08 each"]
+        O["BC547 NPN Transistor - 4 pcs - $0.12 each"]
+    end

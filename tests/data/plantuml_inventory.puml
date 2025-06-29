@@ -1,0 +1,37 @@
+@startuml
+!theme plain
+
+title Component Inventory Summary
+
+package "Passive Components" {
+    [10kΩ Resistor] : 25 pieces
+    [10kΩ Resistor] : $0.05 each
+    
+    [4.7kΩ Resistor] : 15 pcs
+    [4.7kΩ Resistor] : $0.04 each
+    
+    [100µF Capacitor] : 8 pieces  
+    [100µF Capacitor] : 25V Rating
+    [100µF Capacitor] : $0.15 each
+    
+    [22pF Ceramic] : 30 pcs
+    [22pF Ceramic] : $0.02 each
+}
+
+package "Active Components" {
+    [LM555 Timer] : DIP-8 Package
+    [LM555 Timer] : 5 pieces
+    [LM555 Timer] : $0.75 each
+    
+    [BC547 Transistor] : NPN Type
+    [BC547 Transistor] : TO-92 Package
+    [BC547 Transistor] : 12 pcs
+    [BC547 Transistor] : $0.12 each
+    
+    [Red LED 5mm] : 20 pieces
+    [Red LED 5mm] : $0.08 each
+}
+
+note right : Total: 115 components\nTotal Value: $12.45
+
+@enduml

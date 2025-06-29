@@ -1,0 +1,36 @@
+digraph ComponentBOM {
+    rankdir=TB;
+    node [shape=box, style=filled];
+    
+    // Project
+    project [label="LED Flasher Circuit", fillcolor=lightblue];
+    
+    // Component categories
+    resistors [label="Resistors", fillcolor=lightgreen];
+    capacitors [label="Capacitors", fillcolor=lightyellow];
+    semiconductors [label="Semiconductors", fillcolor=lightcoral];
+    
+    // Individual components with quantities and prices
+    r1 [label="10kΩ Resistor\n5 pcs\n$0.05 each", fillcolor=white];
+    r2 [label="220Ω Resistor\n10 pieces\n$0.03 each", fillcolor=white];
+    
+    c1 [label="100µF Capacitor\n25V Electrolytic\n3 pcs\n$0.15 each", fillcolor=white];
+    c2 [label="22pF Ceramic\n8 pieces\n$0.02 each", fillcolor=white];
+    
+    ic1 [label="LM555 Timer IC\nDIP-8 Package\n2 pcs\n$0.75 each", fillcolor=white];
+    led1 [label="Red LED 5mm\n6 pieces\n$0.08 each", fillcolor=white];
+    
+    // Connections
+    project -> resistors;
+    project -> capacitors;
+    project -> semiconductors;
+    
+    resistors -> r1;
+    resistors -> r2;
+    
+    capacitors -> c1;
+    capacitors -> c2;
+    
+    semiconductors -> ic1;
+    semiconductors -> led1;
+}
