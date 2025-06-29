@@ -27,6 +27,91 @@ from . import utils
 console = Console()
 
 
+def _show_rich_help() -> None:
+    """Display rich colored help for the hardware inventory command."""
+    console.print()
+    console.print(Panel.fit(
+        "[bold cyan]Hardware Inventory Management[/] - Component CRUD operations with OCR extraction",
+        border_style="cyan"
+    ))
+    
+    console.print("\n[bold yellow]DESCRIPTION[/]")
+    console.print("A comprehensive CLI for managing electronics component inventory with:")
+    console.print("• [green]OCR-based component extraction[/] from images and PDFs")  
+    console.print("• [green]Multiple database backends[/] (JSON-LD and SQLite)")
+    console.print("• [green]Full CRUD operations[/] (Create, Read, Update, Delete)")
+    console.print("• [green]Search and filtering capabilities[/]")
+    console.print("• [green]Database statistics and analytics[/]")
+    console.print("• [green]Configuration management[/]")
+    console.print("• [green]System health monitoring[/]")
+    
+    console.print("\n[bold yellow]COMMANDS[/]")
+    
+    table = Table(show_header=True, header_style="bold blue")
+    table.add_column("Command", style="cyan", width=12)
+    table.add_column("Description", style="white")
+    
+    commands = [
+        ("add", "Add components from OCR processing of images/PDFs"),
+        ("import", "Import components from another database file"),
+        ("list", "List components in database with pagination"),
+        ("search", "Search components by natural language query"),
+        ("show", "Show detailed component information by ID"),
+        ("update", "Update component fields (value, quantity, etc.)"),
+        ("delete", "Delete component with confirmation"),
+        ("stats", "Show database statistics and analytics"),
+        ("config", "Configuration management and help"),
+        ("info", "System health check and database location"),
+        ("ask", "Ask natural language questions about inventory"),
+        ("chat", "Interactive chat mode for inventory queries"),
+        ("test", "Run API and database connectivity tests"),
+    ]
+    
+    for cmd, desc in commands:
+        table.add_row(cmd, desc)
+    
+    console.print(table)
+    
+    console.print("\n[bold yellow]USAGE[/]")
+    console.print("  [bold]hardware inventory[/] [cyan]<command>[/] [dim][options][/]")
+    console.print("  [bold]hardware-inventory[/] [cyan]<command>[/] [dim][options][/]")
+    
+    console.print("\n[bold yellow]EXAMPLES[/]")
+    examples = [
+        ("hardware inventory add photos/ --service mistral", "Extract components from images"),
+        ("hardware inventory list --limit 20", "List first 20 components"),
+        ("hardware inventory search \"10k resistor\"", "Search for 10k resistors"),
+        ("hardware inventory update r001 --set qty=\"50 pcs\"", "Update component quantity"),
+        ("hardware inventory ask \"Do I have any capacitors?\"", "Natural language query"),
+        ("hardware inventory info", "Show system status and database location"),
+    ]
+    
+    for cmd, desc in examples:
+        console.print(f"  [dim]$[/] [bold]{cmd}[/]")
+        console.print(f"    [dim]{desc}[/]")
+    
+    console.print("\n[bold yellow]DATABASE DISCOVERY[/]")
+    console.print("The system automatically finds your database in this order:")
+    console.print("1. [cyan].hardware-inventory.db[/] in current directory")
+    console.print("2. [cyan]~/.local/share/hardware/inventory-main.db[/] (XDG default)")
+    console.print("3. [cyan]Legacy files[/]: metadata.db, components.jsonld")
+    console.print("4. [cyan]Config files[/]: ~/.component_loader.toml or ./cfg.toml")
+    
+    console.print("\n[bold yellow]OCR SERVICES[/]")
+    console.print("Supported OCR services (set with --service):")
+    console.print("• [cyan]mistral[/] - Mistral vision API (default)")
+    console.print("• [cyan]openai[/] - OpenAI GPT-4o vision")
+    console.print("• [cyan]openrouter[/] - OpenRouter multi-model access")
+    console.print("• [cyan]local[/] - Local Ollama instance")
+    console.print("• [cyan]ocr.space[/] - OCR.Space cloud service")
+    
+    console.print("\n[bold yellow]MORE INFO[/]")
+    console.print("  hardware inventory [cyan]<command>[/] --help    # Detailed command help")
+    console.print("  hardware inventory info                       # System status and configuration")
+    console.print("  hardware inventory config help               # Configuration help")
+    console.print()
+
+
 def _resolve_db_paths(args: argparse.Namespace) -> utils.BaseDB:
     """Resolve database paths with auto-discovery logic."""
     sqlite_path, json_path = config.resolve_db_paths()
@@ -769,6 +854,15 @@ def _check_api_keys() -> dict[str, bool]:
 
 def main(argv: list[str] | None = None) -> None:
     """Main CLI entry point with subcommands for inventory management."""
+    # Handle help requests early with rich formatting
+    if argv is None:
+        argv = sys.argv[1:]
+    
+    # Special case: no arguments or help requested
+    if not argv or argv[0] in ['-h', '--help', 'help']:
+        _show_rich_help()
+        return
+    
     cfg = config.CONFIG
     service_default = cfg.get("main", {}).get("service", "mistral")
     
@@ -885,7 +979,7 @@ DATABASE OPTIONS:
     args = parser.parse_args(argv)
     
     if not args.command:
-        parser.print_help()
+        _show_rich_help()
         return
     
     # Route to appropriate command handler using match/case
