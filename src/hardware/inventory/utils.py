@@ -160,6 +160,54 @@ def _get_image_mime_type(image_path: Path) -> str:
     return mime_types.get(suffix, 'image/jpeg')
 
 
+def test_api_connectivity(service: str) -> bool:
+    """Test API connectivity using free endpoints."""
+    try:
+        if service == "mistral":
+            return _test_mistral_connectivity()
+        elif service == "openai":
+            return _test_openai_connectivity()
+        elif service == "openrouter":
+            return _test_openrouter_connectivity()
+        else:
+            return False
+    except Exception:
+        return False
+
+
+def _test_mistral_connectivity() -> bool:
+    """Test Mistral API connectivity using models endpoint."""
+    api_key = os.getenv("MISTRAL_API_KEY")
+    if not api_key:
+        return False
+    
+    headers = {"Authorization": f"Bearer {api_key}"}
+    response = requests.get("https://api.mistral.ai/v1/models", headers=headers, timeout=10)
+    return response.status_code == 200
+
+
+def _test_openai_connectivity() -> bool:
+    """Test OpenAI API connectivity using models endpoint."""
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        return False
+    
+    headers = {"Authorization": f"Bearer {api_key}"}
+    response = requests.get("https://api.openai.com/v1/models", headers=headers, timeout=10)
+    return response.status_code == 200
+
+
+def _test_openrouter_connectivity() -> bool:
+    """Test OpenRouter API connectivity using models endpoint."""
+    api_key = os.getenv("OPENROUTER_API_KEY")
+    if not api_key:
+        return False
+    
+    headers = {"Authorization": f"Bearer {api_key}"}
+    response = requests.get("https://openrouter.ai/api/v1/models", headers=headers, timeout=10)
+    return response.status_code == 200
+
+
 def _mistral_ocr_extract(path: Path, service: str) -> str:
     """Extract text using Mistral Vision API."""
     api_key = os.getenv("MISTRAL_API_KEY")

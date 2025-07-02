@@ -195,16 +195,45 @@ class TestDatabaseImport:
             assert "type" in component or "description" in component
 
 
-@pytest.mark.integration
-class TestRealAPIIntegration:
-    """Integration tests for real API calls (requires API keys)."""
+class TestAPIConnectivity:
+    """Test API connectivity using free endpoints."""
     
-    def test_mistral_api_integration(self):
-        """Test real Mistral API call if key is available."""
+    def test_mistral_connectivity(self):
+        """Test Mistral API connectivity using models endpoint (free)."""
         if not os.getenv("MISTRAL_API_KEY"):
             pytest.skip("MISTRAL_API_KEY not set")
         
-        # Create a simple test image path (would need actual image)
+        result = utils.test_api_connectivity("mistral")
+        assert result is True, "Mistral API connectivity test failed"
+    
+    def test_openai_connectivity(self):
+        """Test OpenAI API connectivity using models endpoint (free)."""
+        if not os.getenv("OPENAI_API_KEY"):
+            pytest.skip("OPENAI_API_KEY not set")
+        
+        result = utils.test_api_connectivity("openai")
+        assert result is True, "OpenAI API connectivity test failed"
+    
+    def test_openrouter_connectivity(self):
+        """Test OpenRouter API connectivity using models endpoint (free)."""
+        if not os.getenv("OPENROUTER_API_KEY"):
+            pytest.skip("OPENROUTER_API_KEY not set")
+        
+        result = utils.test_api_connectivity("openrouter")
+        assert result is True, "OpenRouter API connectivity test failed"
+
+
+@pytest.mark.integration
+class TestRealAPIIntegration:
+    """Integration tests for real API calls (requires API keys and costs money)."""
+    
+    def test_mistral_api_integration(self):
+        """Test real Mistral API call if key is available. WARNING: Costs money!"""
+        pytest.skip("Expensive test - only run manually with pytest -m integration")
+        
+        if not os.getenv("MISTRAL_API_KEY"):
+            pytest.skip("MISTRAL_API_KEY not set")
+        
         test_path = Path(__file__).parent / "data" / "test_file-1.png"
         if not test_path.exists():
             pytest.skip("Test image not available")
@@ -217,7 +246,9 @@ class TestRealAPIIntegration:
             pytest.fail(f"Mistral API call failed: {e}")
     
     def test_openai_api_integration(self):
-        """Test real OpenAI API call if key is available."""
+        """Test real OpenAI API call if key is available. WARNING: Costs money!"""
+        pytest.skip("Expensive test - only run manually with pytest -m integration")
+        
         if not os.getenv("OPENAI_API_KEY"):
             pytest.skip("OPENAI_API_KEY not set")
         
@@ -253,16 +284,8 @@ class TestCLICommands:
         if not self.example_data.exists():
             pytest.skip("Example database not found")
         
-        from hardware.inventory.cli import _resolve_db_paths
-        from unittest.mock import Mock
-        
-        # Mock args for database import
-        args = Mock()
-        args.db_sqlite = str(self.test_db)
-        args.db_json = None
-        args.import_db = str(self.example_data)
-        
-        db = _resolve_db_paths(args)
+        # Use explicit test database - NEVER touch real database in tests
+        db = utils.SQLiteDB(self.test_db)
         db.import_db(self.example_data)
         
         # Verify import worked
