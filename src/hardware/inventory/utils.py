@@ -18,6 +18,17 @@ DEFAULT_ENDPOINTS = {
     "ocr.space": "https://api.ocr.space/parse/image",
     "openai": "https://api.openai.com/v1/chat/completions",
     "openrouter": "https://openrouter.ai/api/v1/chat/completions",
+    "gemini": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent",
+    "anthropic": "https://api.anthropic.com/v1/messages",
+}
+
+# Cutting-edge models for each service
+DEFAULT_MODELS = {
+    "mistral": "pixtral-large-2411",  # Latest Mistral vision model (Nov 2024)
+    "openai": "gpt-4o-2024-11-20",  # Latest GPT-4o with vision (Nov 2024)
+    "openrouter": "anthropic/claude-3.5-sonnet",  # Best-in-class vision via OpenRouter
+    "gemini": "gemini-2.0-flash-exp",  # Google's newest multimodal model (Dec 2024)
+    "anthropic": "claude-3-5-sonnet-20241022",  # Latest Claude with vision (Oct 2024)
 }
 
 
@@ -120,7 +131,7 @@ class BaseDB(Protocol):
 
 
 def ocr_extract(path: Path, service: str) -> str:
-    """Extract text from image using specified service."""
+    """Extract text from image using specified service with cutting-edge models."""
     match service:
         case "mistral":
             return _mistral_ocr_extract(path, service)
@@ -128,6 +139,10 @@ def ocr_extract(path: Path, service: str) -> str:
             return _openai_ocr_extract(path, service)
         case "openrouter":
             return _openrouter_ocr_extract(path, service)
+        case "gemini":
+            return _gemini_ocr_extract(path, service)
+        case "anthropic":
+            return _anthropic_ocr_extract(path, service)
         case "local" | "ocr.space":
             # Legacy services that use direct file upload
             service_url = DEFAULT_ENDPOINTS[service]
@@ -169,10 +184,51 @@ def test_api_connectivity(service: str) -> bool:
             return _test_openai_connectivity()
         elif service == "openrouter":
             return _test_openrouter_connectivity()
+        elif service == "gemini":
+            return _test_gemini_connectivity()
+        elif service == "anthropic":
+            return _test_anthropic_connectivity()
         else:
             return False
     except Exception:
         return False
+
+
+def _test_gemini_connectivity() -> bool:
+    """Test Google Gemini API connectivity."""
+    api_key = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        return False
+    
+    # Test with models endpoint
+    url = f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key}"
+    response = requests.get(url, timeout=10)
+    return response.status_code == 200
+
+
+def _test_anthropic_connectivity() -> bool:
+    """Test Anthropic Claude API connectivity."""
+    api_key = os.getenv("ANTHROPIC_API_KEY")
+    if not api_key:
+        return False
+    
+    headers = {
+        "x-api-key": api_key,
+        "anthropic-version": "2023-06-01"
+    }
+    # Use a minimal test request
+    payload = {
+        "model": "claude-3-5-sonnet-20241022",
+        "max_tokens": 1,
+        "messages": [{"role": "user", "content": "test"}]
+    }
+    response = requests.post(
+        "https://api.anthropic.com/v1/messages", 
+        headers=headers, 
+        json=payload, 
+        timeout=10
+    )
+    return response.status_code in [200, 429]  # 429 means API key works but rate limited
 
 
 def _test_mistral_connectivity() -> bool:
@@ -209,7 +265,7 @@ def _test_openrouter_connectivity() -> bool:
 
 
 def _mistral_ocr_extract(path: Path, service: str) -> str:
-    """Extract text using Mistral Vision API."""
+    """Extract text using Mistral Vision API with latest model."""
     api_key = os.getenv("MISTRAL_API_KEY")
     if not api_key:
         raise ValueError("MISTRAL_API_KEY environment variable not set")
@@ -222,17 +278,26 @@ def _mistral_ocr_extract(path: Path, service: str) -> str:
         "Authorization": f"Bearer {api_key}"
     }
     
+    # Improved structured prompt for better extraction
     payload = {
-        "model": "pixtral-12b-2409",  # Mistral's vision model
+        "model": DEFAULT_MODELS["mistral"],  # pixtral-large-2411 - latest model
         "messages": [
             {
                 "role": "user",
                 "content": [
                     {
                         "type": "text",
-                        "text": """Please extract all text from this image of electronics components. 
-                        Focus on identifying component types, values, quantities, part numbers, and descriptions.
-                        Return only the extracted text, no additional commentary."""
+                        "text": """Extract all electronics component information from this image.
+                        
+For each component, identify:
+- Type (resistor, capacitor, IC, transistor, etc.)
+- Value (resistance, capacitance, part number, etc.)
+- Quantity (if visible)
+- Package type (through-hole, SMD, DIP, etc.)
+- Tolerance or specifications (if visible)
+- Part number or manufacturer code (if visible)
+
+Format the output as structured text with clear labels. Be precise and thorough."""
                     },
                     {
                         "type": "image_url",
@@ -243,10 +308,11 @@ def _mistral_ocr_extract(path: Path, service: str) -> str:
                 ]
             }
         ],
-        "max_tokens": 1000
+        "max_tokens": 2000,  # Increased for more detailed output
+        "temperature": 0.1  # Low temperature for consistent extraction
     }
     
-    response = requests.post(DEFAULT_ENDPOINTS[service], headers=headers, json=payload)
+    response = requests.post(DEFAULT_ENDPOINTS[service], headers=headers, json=payload, timeout=30)
     response.raise_for_status()
     
     data = response.json()
@@ -254,7 +320,7 @@ def _mistral_ocr_extract(path: Path, service: str) -> str:
 
 
 def _openai_ocr_extract(path: Path, service: str) -> str:
-    """Extract text using OpenAI Vision API."""
+    """Extract text using OpenAI Vision API with latest model."""
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         raise ValueError("OPENAI_API_KEY environment variable not set")
@@ -267,17 +333,26 @@ def _openai_ocr_extract(path: Path, service: str) -> str:
         "Authorization": f"Bearer {api_key}"
     }
     
+    # Improved structured prompt for better extraction
     payload = {
-        "model": "gpt-4o",  # GPT-4 with vision capabilities
+        "model": DEFAULT_MODELS["openai"],  # gpt-4o-2024-11-20 - latest model
         "messages": [
             {
                 "role": "user",
                 "content": [
                     {
                         "type": "text",
-                        "text": """Please extract all text from this image of electronics components. 
-                        Focus on identifying component types, values, quantities, part numbers, and descriptions.
-                        Return only the extracted text, no additional commentary."""
+                        "text": """Extract all electronics component information from this image.
+                        
+For each component, identify:
+- Type (resistor, capacitor, IC, transistor, etc.)
+- Value (resistance, capacitance, part number, etc.)
+- Quantity (if visible)
+- Package type (through-hole, SMD, DIP, etc.)
+- Tolerance or specifications (if visible)
+- Part number or manufacturer code (if visible)
+
+Format the output as structured text with clear labels. Be precise and thorough."""
                     },
                     {
                         "type": "image_url",
@@ -288,10 +363,11 @@ def _openai_ocr_extract(path: Path, service: str) -> str:
                 ]
             }
         ],
-        "max_tokens": 1000
+        "max_tokens": 2000,  # Increased for more detailed output
+        "temperature": 0.1  # Low temperature for consistent extraction
     }
     
-    response = requests.post(DEFAULT_ENDPOINTS[service], headers=headers, json=payload)
+    response = requests.post(DEFAULT_ENDPOINTS[service], headers=headers, json=payload, timeout=30)
     response.raise_for_status()
     
     data = response.json()
@@ -299,7 +375,7 @@ def _openai_ocr_extract(path: Path, service: str) -> str:
 
 
 def _openrouter_ocr_extract(path: Path, service: str) -> str:
-    """Extract text using OpenRouter with vision-capable models."""
+    """Extract text using OpenRouter with latest vision-capable models."""
     api_key = os.getenv("OPENROUTER_API_KEY")
     if not api_key:
         raise ValueError("OPENROUTER_API_KEY environment variable not set")
@@ -310,21 +386,30 @@ def _openrouter_ocr_extract(path: Path, service: str) -> str:
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
-        "HTTP-Referer": "https://github.com/matias-ceau/hardware",  # Optional
-        "X-Title": "Hardware Inventory OCR"  # Optional
+        "HTTP-Referer": "https://github.com/matias-ceau/hardware",
+        "X-Title": "Hardware Inventory OCR"
     }
     
+    # Improved structured prompt for better extraction
     payload = {
-        "model": "anthropic/claude-3.5-sonnet",  # Vision-capable model
+        "model": DEFAULT_MODELS["openrouter"],  # anthropic/claude-3.5-sonnet - best vision
         "messages": [
             {
                 "role": "user",
                 "content": [
                     {
                         "type": "text",
-                        "text": """Please extract all text from this image of electronics components. 
-                        Focus on identifying component types, values, quantities, part numbers, and descriptions.
-                        Return only the extracted text, no additional commentary."""
+                        "text": """Extract all electronics component information from this image.
+                        
+For each component, identify:
+- Type (resistor, capacitor, IC, transistor, etc.)
+- Value (resistance, capacitance, part number, etc.)
+- Quantity (if visible)
+- Package type (through-hole, SMD, DIP, etc.)
+- Tolerance or specifications (if visible)
+- Part number or manufacturer code (if visible)
+
+Format the output as structured text with clear labels. Be precise and thorough."""
                     },
                     {
                         "type": "image_url",
@@ -335,14 +420,128 @@ def _openrouter_ocr_extract(path: Path, service: str) -> str:
                 ]
             }
         ],
-        "max_tokens": 1000
+        "max_tokens": 2000,
+        "temperature": 0.1
     }
     
-    response = requests.post(DEFAULT_ENDPOINTS[service], headers=headers, json=payload)
+    response = requests.post(DEFAULT_ENDPOINTS[service], headers=headers, json=payload, timeout=30)
     response.raise_for_status()
     
     data = response.json()
     return data["choices"][0]["message"]["content"]
+
+
+def _gemini_ocr_extract(path: Path, service: str) -> str:
+    """Extract text using Google Gemini 2.0 Flash - newest multimodal model."""
+    api_key = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        raise ValueError("GOOGLE_API_KEY or GEMINI_API_KEY environment variable not set")
+    
+    base64_image = _encode_image_base64(path)
+    mime_type = _get_image_mime_type(path)
+    
+    # Gemini uses a different API structure
+    url = f"{DEFAULT_ENDPOINTS[service]}?key={api_key}"
+    
+    payload = {
+        "contents": [
+            {
+                "parts": [
+                    {
+                        "text": """Extract all electronics component information from this image.
+                        
+For each component, identify:
+- Type (resistor, capacitor, IC, transistor, etc.)
+- Value (resistance, capacitance, part number, etc.)
+- Quantity (if visible)
+- Package type (through-hole, SMD, DIP, etc.)
+- Tolerance or specifications (if visible)
+- Part number or manufacturer code (if visible)
+
+Format the output as structured text with clear labels. Be precise and thorough."""
+                    },
+                    {
+                        "inline_data": {
+                            "mime_type": mime_type,
+                            "data": base64_image
+                        }
+                    }
+                ]
+            }
+        ],
+        "generationConfig": {
+            "maxOutputTokens": 2000,
+            "temperature": 0.1
+        }
+    }
+    
+    response = requests.post(url, headers={"Content-Type": "application/json"}, json=payload, timeout=30)
+    response.raise_for_status()
+    
+    data = response.json()
+    # Gemini response structure is different
+    return data["candidates"][0]["content"]["parts"][0]["text"]
+
+
+def _anthropic_ocr_extract(path: Path, service: str) -> str:
+    """Extract text using Anthropic Claude 3.5 Sonnet - best-in-class vision."""
+    api_key = os.getenv("ANTHROPIC_API_KEY")
+    if not api_key:
+        raise ValueError("ANTHROPIC_API_KEY environment variable not set")
+    
+    base64_image = _encode_image_base64(path)
+    mime_type = _get_image_mime_type(path)
+    
+    # Extract just the image format from mime_type (e.g., "image/png" -> "png")
+    image_format = mime_type.split("/")[-1]
+    
+    headers = {
+        "x-api-key": api_key,
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json"
+    }
+    
+    # Anthropic has a different API structure
+    payload = {
+        "model": DEFAULT_MODELS["anthropic"],  # claude-3-5-sonnet-20241022 - latest
+        "max_tokens": 2000,
+        "temperature": 0.1,
+        "messages": [
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "image",
+                        "source": {
+                            "type": "base64",
+                            "media_type": mime_type,
+                            "data": base64_image
+                        }
+                    },
+                    {
+                        "type": "text",
+                        "text": """Extract all electronics component information from this image.
+                        
+For each component, identify:
+- Type (resistor, capacitor, IC, transistor, etc.)
+- Value (resistance, capacitance, part number, etc.)
+- Quantity (if visible)
+- Package type (through-hole, SMD, DIP, etc.)
+- Tolerance or specifications (if visible)
+- Part number or manufacturer code (if visible)
+
+Format the output as structured text with clear labels. Be precise and thorough."""
+                    }
+                ]
+            }
+        ]
+    }
+    
+    response = requests.post(DEFAULT_ENDPOINTS[service], headers=headers, json=payload, timeout=30)
+    response.raise_for_status()
+    
+    data = response.json()
+    return data["content"][0]["text"]
 
 
 def parse_fields(text: str) -> dict[str, Any]:

@@ -124,13 +124,15 @@ uv run hardware inventory list --limit 1
 
 ### OCR Services
 
-| Service | API Key Required | Description |
-|---------|------------------|-------------|
-| mistral | MISTRAL_API_KEY | Mistral vision API (default) |
-| openai | OPENAI_API_KEY | OpenAI GPT-4o vision |
-| openrouter | OPENROUTER_API_KEY | OpenRouter multi-model access |
-| local | None | Local Ollama instance |
-| ocr.space | OCR_SPACE_API_KEY | OCR.Space cloud service |
+| Service | Model | API Key Required | Description |
+|---------|-------|------------------|-------------|
+| mistral | pixtral-large-2411 | MISTRAL_API_KEY | Mistral's latest vision model (Nov 2024) |
+| openai | gpt-4o-2024-11-20 | OPENAI_API_KEY | OpenAI's latest GPT-4o vision (Nov 2024) |
+| gemini | gemini-2.0-flash-exp | GOOGLE_API_KEY | Google's newest multimodal model (Dec 2024) |
+| anthropic | claude-3-5-sonnet-20241022 | ANTHROPIC_API_KEY | Best-in-class vision model (Oct 2024) |
+| openrouter | claude-3.5-sonnet | OPENROUTER_API_KEY | Access to Claude via OpenRouter |
+| local | - | None | Local Ollama instance |
+| ocr.space | - | OCR_SPACE_API_KEY | OCR.Space cloud service |
 
 ## Architecture
 
@@ -143,15 +145,31 @@ hardware/
 └── visualize/     # (Future) Data visualization UI
 ```
 
+## Choosing the Right OCR Service
+
+The system supports multiple cutting-edge vision models for component extraction:
+
+| Service | Best For | Strengths | Cost |
+|---------|----------|-----------|------|
+| **Gemini 2.0** | General use | Fast, accurate, newest model (Dec 2024) | Low |
+| **Claude 3.5 Sonnet** | Complex images | Best vision quality, detailed extraction | Medium |
+| **GPT-4o (latest)** | Balanced | Great accuracy, reliable, well-tested | Medium |
+| **Mistral Pixtral** | Cost-effective | Good quality, European provider | Low |
+| **OpenRouter** | Flexibility | Access to multiple models via one API | Variable |
+
+**Recommendation**: Start with **Gemini 2.0** for best speed/quality balance, or use **Claude 3.5 Sonnet** for the highest accuracy on complex component images.
+
 ## Configuration
 
 ### Environment Variables
 
 ```bash
-# OCR API Keys
-export MISTRAL_API_KEY="your-mistral-key"
-export OPENAI_API_KEY="your-openai-key"
-export OPENROUTER_API_KEY="your-openrouter-key"
+# OCR API Keys - Use cutting-edge models for best results
+export MISTRAL_API_KEY="your-mistral-key"          # Latest: pixtral-large-2411
+export OPENAI_API_KEY="your-openai-key"            # Latest: gpt-4o-2024-11-20
+export GOOGLE_API_KEY="your-google-key"            # Gemini 2.0 Flash (newest)
+export ANTHROPIC_API_KEY="your-anthropic-key"      # Claude 3.5 Sonnet (best vision)
+export OPENROUTER_API_KEY="your-openrouter-key"    # Multi-model access
 
 # Optional: Custom data directory
 export XDG_DATA_HOME="/path/to/data"
@@ -212,8 +230,10 @@ uv run hardware-mcp-server
 ### Component Management
 
 ```bash
-# Add components from photos
-uv run hardware inventory add component-photos/ --service openai
+# Add components from photos using cutting-edge models
+uv run hardware inventory add component-photos/ --service gemini    # Google's newest
+uv run hardware inventory add component-photos/ --service anthropic # Best vision quality
+uv run hardware inventory add component-photos/ --service openai    # Latest GPT-4o
 
 # Search for specific components
 uv run hardware inventory search "resistor 10k"
