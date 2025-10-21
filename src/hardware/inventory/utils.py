@@ -545,19 +545,77 @@ Format the output as structured text with clear labels. Be precise and thorough.
 
 
 def parse_fields(text: str) -> dict[str, Any]:
+    """Parse component fields from OCR text with improved patterns.
+    
+    Extracts:
+    - Component type (resistor, capacitor, IC, etc.)
+    - Value (resistance, capacitance, part number)
+    - Quantity (number of pieces)
+    - Package type (SMD, through-hole, etc.)
+    - Additional specs (tolerance, voltage, etc.)
+    """
     field_patterns = {
-        "value": r"([0-9\.]+\s*(?:[µu]F|nF|pF|kΩ|Ω|mH|uH|%))",
-        "qty": r"([0-9]+)\s*(?:pcs?|pieces?)",
-        # price requires a currency symbol to avoid matching numeric values
-        "price": r"([€$£]\s*[0-9]+\.?[0-9]*)",
+        # Values with units
+        "value": r"([0-9\.]+\s*(?:[µu]F|nF|pF|kΩ|Ω|mH|uH|H|V|mV|kV|W|mW|A|mA|%))",
+        "qty": r"([0-9]+)\s*(?:pcs?|pieces?|units?)",
+        "price": r"([€$£¥]\s*[0-9]+\.?[0-9]*)",
+        # Part numbers (alphanumeric with common patterns)
+        "partNumber": r"(?:P/N|PN|Part\s*#?:?\s*)([A-Z0-9][\w\-]+)",
+        # Package types
+        "package": r"(?:Package|PKG):?\s*(SMD|DIP|SOIC|QFP|BGA|TO-\d+|SOT-\d+|0402|0603|0805|1206|through-hole)",
+        # Tolerance
+        "tolerance": r"([±]\s*[0-9\.]+\s*%)",
+        # Voltage rating
+        "voltage": r"([0-9\.]+\s*[mkKM]?V)(?:\s+rated)?",
     }
+    
     data: dict[str, Any] = {}
+    
+    # Extract fields using patterns
     for key, pattern in field_patterns.items():
         m = re.search(pattern, text, re.I)
         if m:
             data[key] = m.group(1).strip()
+    
+    # Extract component type from common keywords
+    type_patterns = {
+        "resistor": r"\b(?:resistor|resistance)\b",
+        "capacitor": r"\b(?:capacitor|capacitance)\b",
+        "ic": r"\b(?:IC|integrated\s+circuit|chip)\b",
+        "transistor": r"\b(?:transistor|BJT|MOSFET|FET)\b",
+        "diode": r"\b(?:diode|LED)\b",
+        "inductor": r"\b(?:inductor|inductance|coil)\b",
+    }
+    
+    for comp_type, pattern in type_patterns.items():
+        if re.search(pattern, text, re.I):
+            data["type"] = comp_type
+            break
+    
+    # Use first line as description if not too long
     lines = text.splitlines()
-    data["description"] = lines[0][:120] if lines else ""
+    if lines:
+        first_line = lines[0].strip()
+        if len(first_line) <= 120:
+            data["description"] = first_line
+        else:
+            # Try to extract a reasonable description from structured text
+            for line in lines[:3]:
+                if line.strip() and not line.startswith("For each") and not line.startswith("-"):
+                    data["description"] = line.strip()[:120]
+                    break
+    
+    # If no description, create one from available data
+    if "description" not in data:
+        desc_parts = []
+        if "type" in data:
+            desc_parts.append(data["type"].capitalize())
+        if "value" in data:
+            desc_parts.append(data["value"])
+        if "package" in data:
+            desc_parts.append(f"({data['package']})")
+        data["description"] = " ".join(desc_parts) if desc_parts else "Component"
+    
     return data
 
 
@@ -706,13 +764,48 @@ def normalize_jsonld_component(component: dict[str, Any], collection_type: str, 
 
 
 class JSONDB:
+    """JSON file database backend for hardware component inventory.
+    
+    Simple file-based storage using JSON format for portability and
+    easy inspection. Good for smaller inventories and cross-platform use.
+    
+    Features:
+    - Human-readable JSON format
+    - Easy backup and version control
+    - Portable across systems
+    - Simple to inspect and debug
+    """
+    
     def __init__(self, path: Path) -> None:
+        """Initialize JSON database.
+        
+        Args:
+            path: Path to the JSON database file
+        """
         self.path = path
         self.db_path = str(path)  # For consistent interface
+        
+        # Ensure parent directory exists
+        path.parent.mkdir(parents=True, exist_ok=True)
+        
+        # Load or initialize empty database
         if path.exists():
-            self.entries = json.loads(path.read_text())
+            try:
+                self.entries = json.loads(path.read_text())
+                if not isinstance(self.entries, list):
+                    # Handle legacy formats
+                    self.entries = []
+            except json.JSONDecodeError:
+                # Corrupt file, start fresh
+                self.entries = []
+                self._save()
         else:
             self.entries = []
+            self._save()
+    
+    def _save(self) -> None:
+        """Save entries to disk with pretty formatting."""
+        self.path.write_text(json.dumps(self.entries, indent=2, ensure_ascii=False))
 
     def has_file(self, f: str) -> bool:
         return any(e.get("file") == f for e in self.entries)
@@ -721,13 +814,14 @@ class JSONDB:
         return any(e.get("hash") == h for e in self.entries)
 
     def add(self, entry: dict[str, Any], file: str, h: str) -> bool:
+        """Add a new component entry to the database."""
         if self.has_file(file) or self.has_hash(h):
             return False
         entry = entry.copy()
         entry["file"] = file
         entry["hash"] = h
         self.entries.append(entry)
-        self.path.write_text(json.dumps(self.entries))
+        self._save()
         return True
 
     def normalize_type(self, type_str: str) -> str:
@@ -745,7 +839,7 @@ class JSONDB:
         # Add all collected components
         if components_to_add:
             self.entries.extend(components_to_add)
-            self.path.write_text(json.dumps(self.entries))
+            self._save()
 
     def list_all(self, limit: int | None = None, offset: int = 0) -> list[dict[str, Any]]:
         """List all components with optional pagination."""
@@ -789,7 +883,7 @@ class JSONDB:
         for i, entry in enumerate(self.entries):
             if entry.get("id") == component_id:
                 self.entries[i].update(updates)
-                self.path.write_text(json.dumps(self.entries))
+                self._save()
                 return True
         return False
 
@@ -798,7 +892,7 @@ class JSONDB:
         for i, entry in enumerate(self.entries):
             if entry.get("id") == component_id:
                 del self.entries[i]
-                self.path.write_text(json.dumps(self.entries))
+                self._save()
                 return True
         return False
 
@@ -838,14 +932,50 @@ class SQLiteDB:
     
     Stores components in a relational database with JSON data column
     for flexibility while maintaining query performance.
+    
+    Features:
+    - Automatic database initialization
+    - Efficient indexing on ID, file, and hash fields
+    - JSON storage for flexible component data
+    - Full-text search capabilities
     """
     
     def __init__(self, path: Path) -> None:
+        """Initialize SQLite database with schema creation.
+        
+        Args:
+            path: Path to the SQLite database file
+        """
         self.db_path = str(path)
+        
+        # Ensure parent directory exists
+        path.parent.mkdir(parents=True, exist_ok=True)
+        
+        # Connect and create schema
         self.conn = sqlite3.connect(path)
+        self._init_schema()
+    
+    def _init_schema(self) -> None:
+        """Initialize database schema with proper indexes."""
+        # Create main table
+        self.conn.execute("""
+            CREATE TABLE IF NOT EXISTS components (
+                id TEXT PRIMARY KEY,
+                file TEXT,
+                hash TEXT,
+                data TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        
+        # Create indexes for efficient queries
         self.conn.execute(
-            "CREATE TABLE IF NOT EXISTS components (id TEXT PRIMARY KEY, file TEXT, hash TEXT, data TEXT)"
+            "CREATE INDEX IF NOT EXISTS idx_file ON components(file)"
         )
+        self.conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_hash ON components(hash)"
+        )
+        
         self.conn.commit()
 
     def has_file(self, f: str) -> bool:
