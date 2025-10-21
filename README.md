@@ -83,6 +83,8 @@ uv sync
 pip install -e .
 ```
 
+**🚀 [Complete Getting Started Guide →](docs/examples/getting-started.md)**
+
 ### Set Up API Keys
 
 Choose one or more cutting-edge vision services:
