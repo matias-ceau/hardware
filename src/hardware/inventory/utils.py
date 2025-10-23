@@ -18,6 +18,17 @@ DEFAULT_ENDPOINTS = {
     "ocr.space": "https://api.ocr.space/parse/image",
     "openai": "https://api.openai.com/v1/chat/completions",
     "openrouter": "https://openrouter.ai/api/v1/chat/completions",
+    "gemini": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent",
+    "anthropic": "https://api.anthropic.com/v1/messages",
+}
+
+# Cutting-edge models for each service
+DEFAULT_MODELS = {
+    "mistral": "pixtral-large-2411",  # Latest Mistral vision model (Nov 2024)
+    "openai": "gpt-4o-2024-11-20",  # Latest GPT-4o with vision (Nov 2024)
+    "openrouter": "anthropic/claude-3.5-sonnet",  # Best-in-class vision via OpenRouter
+    "gemini": "gemini-2.0-flash-exp",  # Google's newest multimodal model (Dec 2024)
+    "anthropic": "claude-3-5-sonnet-20241022",  # Latest Claude with vision (Oct 2024)
 }
 
 
@@ -120,7 +131,7 @@ class BaseDB(Protocol):
 
 
 def ocr_extract(path: Path, service: str) -> str:
-    """Extract text from image using specified service."""
+    """Extract text from image using specified service with cutting-edge models."""
     match service:
         case "mistral":
             return _mistral_ocr_extract(path, service)
@@ -128,6 +139,10 @@ def ocr_extract(path: Path, service: str) -> str:
             return _openai_ocr_extract(path, service)
         case "openrouter":
             return _openrouter_ocr_extract(path, service)
+        case "gemini":
+            return _gemini_ocr_extract(path, service)
+        case "anthropic":
+            return _anthropic_ocr_extract(path, service)
         case "local" | "ocr.space":
             # Legacy services that use direct file upload
             service_url = DEFAULT_ENDPOINTS[service]
@@ -169,10 +184,51 @@ def test_api_connectivity(service: str) -> bool:
             return _test_openai_connectivity()
         elif service == "openrouter":
             return _test_openrouter_connectivity()
+        elif service == "gemini":
+            return _test_gemini_connectivity()
+        elif service == "anthropic":
+            return _test_anthropic_connectivity()
         else:
             return False
     except Exception:
         return False
+
+
+def _test_gemini_connectivity() -> bool:
+    """Test Google Gemini API connectivity."""
+    api_key = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        return False
+    
+    # Test with models endpoint
+    url = f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key}"
+    response = requests.get(url, timeout=10)
+    return response.status_code == 200
+
+
+def _test_anthropic_connectivity() -> bool:
+    """Test Anthropic Claude API connectivity."""
+    api_key = os.getenv("ANTHROPIC_API_KEY")
+    if not api_key:
+        return False
+    
+    headers = {
+        "x-api-key": api_key,
+        "anthropic-version": "2023-06-01"
+    }
+    # Use a minimal test request
+    payload = {
+        "model": "claude-3-5-sonnet-20241022",
+        "max_tokens": 1,
+        "messages": [{"role": "user", "content": "test"}]
+    }
+    response = requests.post(
+        "https://api.anthropic.com/v1/messages", 
+        headers=headers, 
+        json=payload, 
+        timeout=10
+    )
+    return response.status_code in [200, 429]  # 429 means API key works but rate limited
 
 
 def _test_mistral_connectivity() -> bool:
@@ -209,7 +265,7 @@ def _test_openrouter_connectivity() -> bool:
 
 
 def _mistral_ocr_extract(path: Path, service: str) -> str:
-    """Extract text using Mistral Vision API."""
+    """Extract text using Mistral Vision API with latest model."""
     api_key = os.getenv("MISTRAL_API_KEY")
     if not api_key:
         raise ValueError("MISTRAL_API_KEY environment variable not set")
@@ -222,17 +278,26 @@ def _mistral_ocr_extract(path: Path, service: str) -> str:
         "Authorization": f"Bearer {api_key}"
     }
     
+    # Improved structured prompt for better extraction
     payload = {
-        "model": "pixtral-12b-2409",  # Mistral's vision model
+        "model": DEFAULT_MODELS["mistral"],  # pixtral-large-2411 - latest model
         "messages": [
             {
                 "role": "user",
                 "content": [
                     {
                         "type": "text",
-                        "text": """Please extract all text from this image of electronics components. 
-                        Focus on identifying component types, values, quantities, part numbers, and descriptions.
-                        Return only the extracted text, no additional commentary."""
+                        "text": """Extract all electronics component information from this image.
+                        
+For each component, identify:
+- Type (resistor, capacitor, IC, transistor, etc.)
+- Value (resistance, capacitance, part number, etc.)
+- Quantity (if visible)
+- Package type (through-hole, SMD, DIP, etc.)
+- Tolerance or specifications (if visible)
+- Part number or manufacturer code (if visible)
+
+Format the output as structured text with clear labels. Be precise and thorough."""
                     },
                     {
                         "type": "image_url",
@@ -243,10 +308,11 @@ def _mistral_ocr_extract(path: Path, service: str) -> str:
                 ]
             }
         ],
-        "max_tokens": 1000
+        "max_tokens": 2000,  # Increased for more detailed output
+        "temperature": 0.1  # Low temperature for consistent extraction
     }
     
-    response = requests.post(DEFAULT_ENDPOINTS[service], headers=headers, json=payload)
+    response = requests.post(DEFAULT_ENDPOINTS[service], headers=headers, json=payload, timeout=30)
     response.raise_for_status()
     
     data = response.json()
@@ -254,7 +320,7 @@ def _mistral_ocr_extract(path: Path, service: str) -> str:
 
 
 def _openai_ocr_extract(path: Path, service: str) -> str:
-    """Extract text using OpenAI Vision API."""
+    """Extract text using OpenAI Vision API with latest model."""
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         raise ValueError("OPENAI_API_KEY environment variable not set")
@@ -267,17 +333,26 @@ def _openai_ocr_extract(path: Path, service: str) -> str:
         "Authorization": f"Bearer {api_key}"
     }
     
+    # Improved structured prompt for better extraction
     payload = {
-        "model": "gpt-4o",  # GPT-4 with vision capabilities
+        "model": DEFAULT_MODELS["openai"],  # gpt-4o-2024-11-20 - latest model
         "messages": [
             {
                 "role": "user",
                 "content": [
                     {
                         "type": "text",
-                        "text": """Please extract all text from this image of electronics components. 
-                        Focus on identifying component types, values, quantities, part numbers, and descriptions.
-                        Return only the extracted text, no additional commentary."""
+                        "text": """Extract all electronics component information from this image.
+                        
+For each component, identify:
+- Type (resistor, capacitor, IC, transistor, etc.)
+- Value (resistance, capacitance, part number, etc.)
+- Quantity (if visible)
+- Package type (through-hole, SMD, DIP, etc.)
+- Tolerance or specifications (if visible)
+- Part number or manufacturer code (if visible)
+
+Format the output as structured text with clear labels. Be precise and thorough."""
                     },
                     {
                         "type": "image_url",
@@ -288,10 +363,11 @@ def _openai_ocr_extract(path: Path, service: str) -> str:
                 ]
             }
         ],
-        "max_tokens": 1000
+        "max_tokens": 2000,  # Increased for more detailed output
+        "temperature": 0.1  # Low temperature for consistent extraction
     }
     
-    response = requests.post(DEFAULT_ENDPOINTS[service], headers=headers, json=payload)
+    response = requests.post(DEFAULT_ENDPOINTS[service], headers=headers, json=payload, timeout=30)
     response.raise_for_status()
     
     data = response.json()
@@ -299,7 +375,7 @@ def _openai_ocr_extract(path: Path, service: str) -> str:
 
 
 def _openrouter_ocr_extract(path: Path, service: str) -> str:
-    """Extract text using OpenRouter with vision-capable models."""
+    """Extract text using OpenRouter with latest vision-capable models."""
     api_key = os.getenv("OPENROUTER_API_KEY")
     if not api_key:
         raise ValueError("OPENROUTER_API_KEY environment variable not set")
@@ -310,21 +386,30 @@ def _openrouter_ocr_extract(path: Path, service: str) -> str:
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
-        "HTTP-Referer": "https://github.com/matias-ceau/hardware",  # Optional
-        "X-Title": "Hardware Inventory OCR"  # Optional
+        "HTTP-Referer": "https://github.com/matias-ceau/hardware",
+        "X-Title": "Hardware Inventory OCR"
     }
     
+    # Improved structured prompt for better extraction
     payload = {
-        "model": "anthropic/claude-3.5-sonnet",  # Vision-capable model
+        "model": DEFAULT_MODELS["openrouter"],  # anthropic/claude-3.5-sonnet - best vision
         "messages": [
             {
                 "role": "user",
                 "content": [
                     {
                         "type": "text",
-                        "text": """Please extract all text from this image of electronics components. 
-                        Focus on identifying component types, values, quantities, part numbers, and descriptions.
-                        Return only the extracted text, no additional commentary."""
+                        "text": """Extract all electronics component information from this image.
+                        
+For each component, identify:
+- Type (resistor, capacitor, IC, transistor, etc.)
+- Value (resistance, capacitance, part number, etc.)
+- Quantity (if visible)
+- Package type (through-hole, SMD, DIP, etc.)
+- Tolerance or specifications (if visible)
+- Part number or manufacturer code (if visible)
+
+Format the output as structured text with clear labels. Be precise and thorough."""
                     },
                     {
                         "type": "image_url",
@@ -335,30 +420,202 @@ def _openrouter_ocr_extract(path: Path, service: str) -> str:
                 ]
             }
         ],
-        "max_tokens": 1000
+        "max_tokens": 2000,
+        "temperature": 0.1
     }
     
-    response = requests.post(DEFAULT_ENDPOINTS[service], headers=headers, json=payload)
+    response = requests.post(DEFAULT_ENDPOINTS[service], headers=headers, json=payload, timeout=30)
     response.raise_for_status()
     
     data = response.json()
     return data["choices"][0]["message"]["content"]
 
 
-def parse_fields(text: str) -> dict[str, Any]:
-    field_patterns = {
-        "value": r"([0-9\.]+\s*(?:[µu]F|nF|pF|kΩ|Ω|mH|uH|%))",
-        "qty": r"([0-9]+)\s*(?:pcs?|pieces?)",
-        # price requires a currency symbol to avoid matching numeric values
-        "price": r"([€$£]\s*[0-9]+\.?[0-9]*)",
+def _gemini_ocr_extract(path: Path, service: str) -> str:
+    """Extract text using Google Gemini 2.0 Flash - newest multimodal model."""
+    api_key = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        raise ValueError("GOOGLE_API_KEY or GEMINI_API_KEY environment variable not set")
+    
+    base64_image = _encode_image_base64(path)
+    mime_type = _get_image_mime_type(path)
+    
+    # Gemini uses a different API structure
+    url = f"{DEFAULT_ENDPOINTS[service]}?key={api_key}"
+    
+    payload = {
+        "contents": [
+            {
+                "parts": [
+                    {
+                        "text": """Extract all electronics component information from this image.
+                        
+For each component, identify:
+- Type (resistor, capacitor, IC, transistor, etc.)
+- Value (resistance, capacitance, part number, etc.)
+- Quantity (if visible)
+- Package type (through-hole, SMD, DIP, etc.)
+- Tolerance or specifications (if visible)
+- Part number or manufacturer code (if visible)
+
+Format the output as structured text with clear labels. Be precise and thorough."""
+                    },
+                    {
+                        "inline_data": {
+                            "mime_type": mime_type,
+                            "data": base64_image
+                        }
+                    }
+                ]
+            }
+        ],
+        "generationConfig": {
+            "maxOutputTokens": 2000,
+            "temperature": 0.1
+        }
     }
+    
+    response = requests.post(url, headers={"Content-Type": "application/json"}, json=payload, timeout=30)
+    response.raise_for_status()
+    
+    data = response.json()
+    # Gemini response structure is different
+    return data["candidates"][0]["content"]["parts"][0]["text"]
+
+
+def _anthropic_ocr_extract(path: Path, service: str) -> str:
+    """Extract text using Anthropic Claude 3.5 Sonnet - best-in-class vision."""
+    api_key = os.getenv("ANTHROPIC_API_KEY")
+    if not api_key:
+        raise ValueError("ANTHROPIC_API_KEY environment variable not set")
+    
+    base64_image = _encode_image_base64(path)
+    mime_type = _get_image_mime_type(path)
+    
+    # Extract just the image format from mime_type (e.g., "image/png" -> "png")
+    image_format = mime_type.split("/")[-1]
+    
+    headers = {
+        "x-api-key": api_key,
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json"
+    }
+    
+    # Anthropic has a different API structure
+    payload = {
+        "model": DEFAULT_MODELS["anthropic"],  # claude-3-5-sonnet-20241022 - latest
+        "max_tokens": 2000,
+        "temperature": 0.1,
+        "messages": [
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "image",
+                        "source": {
+                            "type": "base64",
+                            "media_type": mime_type,
+                            "data": base64_image
+                        }
+                    },
+                    {
+                        "type": "text",
+                        "text": """Extract all electronics component information from this image.
+                        
+For each component, identify:
+- Type (resistor, capacitor, IC, transistor, etc.)
+- Value (resistance, capacitance, part number, etc.)
+- Quantity (if visible)
+- Package type (through-hole, SMD, DIP, etc.)
+- Tolerance or specifications (if visible)
+- Part number or manufacturer code (if visible)
+
+Format the output as structured text with clear labels. Be precise and thorough."""
+                    }
+                ]
+            }
+        ]
+    }
+    
+    response = requests.post(DEFAULT_ENDPOINTS[service], headers=headers, json=payload, timeout=30)
+    response.raise_for_status()
+    
+    data = response.json()
+    return data["content"][0]["text"]
+
+
+def parse_fields(text: str) -> dict[str, Any]:
+    """Parse component fields from OCR text with improved patterns.
+    
+    Extracts:
+    - Component type (resistor, capacitor, IC, etc.)
+    - Value (resistance, capacitance, part number)
+    - Quantity (number of pieces)
+    - Package type (SMD, through-hole, etc.)
+    - Additional specs (tolerance, voltage, etc.)
+    """
+    field_patterns = {
+        # Values with units
+        "value": r"([0-9\.]+\s*(?:[µu]F|nF|pF|kΩ|Ω|mH|uH|H|V|mV|kV|W|mW|A|mA|%))",
+        "qty": r"([0-9]+)\s*(?:pcs?|pieces?|units?)",
+        "price": r"([€$£¥]\s*[0-9]+\.?[0-9]*)",
+        # Part numbers (alphanumeric with common patterns)
+        "partNumber": r"(?:P/N|PN|Part\s*#?:?\s*)([A-Z0-9][\w\-]+)",
+        # Package types
+        "package": r"(?:Package|PKG):?\s*(SMD|DIP|SOIC|QFP|BGA|TO-\d+|SOT-\d+|0402|0603|0805|1206|through-hole)",
+        # Tolerance
+        "tolerance": r"([±]\s*[0-9\.]+\s*%)",
+        # Voltage rating
+        "voltage": r"([0-9\.]+\s*[mkKM]?V)(?:\s+rated)?",
+    }
+    
     data: dict[str, Any] = {}
+    
+    # Extract fields using patterns
     for key, pattern in field_patterns.items():
         m = re.search(pattern, text, re.I)
         if m:
             data[key] = m.group(1).strip()
+    
+    # Extract component type from common keywords
+    type_patterns = {
+        "resistor": r"\b(?:resistor|resistance)\b",
+        "capacitor": r"\b(?:capacitor|capacitance)\b",
+        "ic": r"\b(?:IC|integrated\s+circuit|chip)\b",
+        "transistor": r"\b(?:transistor|BJT|MOSFET|FET)\b",
+        "diode": r"\b(?:diode|LED)\b",
+        "inductor": r"\b(?:inductor|inductance|coil)\b",
+    }
+    
+    for comp_type, pattern in type_patterns.items():
+        if re.search(pattern, text, re.I):
+            data["type"] = comp_type
+            break
+    
+    # Use first line as description if not too long
     lines = text.splitlines()
-    data["description"] = lines[0][:120] if lines else ""
+    if lines:
+        first_line = lines[0].strip()
+        if len(first_line) <= 120:
+            data["description"] = first_line
+        else:
+            # Try to extract a reasonable description from structured text
+            for line in lines[:3]:
+                if line.strip() and not line.startswith("For each") and not line.startswith("-"):
+                    data["description"] = line.strip()[:120]
+                    break
+    
+    # If no description, create one from available data
+    if "description" not in data:
+        desc_parts = []
+        if "type" in data:
+            desc_parts.append(data["type"].capitalize())
+        if "value" in data:
+            desc_parts.append(data["value"])
+        if "package" in data:
+            desc_parts.append(f"({data['package']})")
+        data["description"] = " ".join(desc_parts) if desc_parts else "Component"
+    
     return data
 
 
@@ -507,13 +764,48 @@ def normalize_jsonld_component(component: dict[str, Any], collection_type: str, 
 
 
 class JSONDB:
+    """JSON file database backend for hardware component inventory.
+    
+    Simple file-based storage using JSON format for portability and
+    easy inspection. Good for smaller inventories and cross-platform use.
+    
+    Features:
+    - Human-readable JSON format
+    - Easy backup and version control
+    - Portable across systems
+    - Simple to inspect and debug
+    """
+    
     def __init__(self, path: Path) -> None:
+        """Initialize JSON database.
+        
+        Args:
+            path: Path to the JSON database file
+        """
         self.path = path
         self.db_path = str(path)  # For consistent interface
+        
+        # Ensure parent directory exists
+        path.parent.mkdir(parents=True, exist_ok=True)
+        
+        # Load or initialize empty database
         if path.exists():
-            self.entries = json.loads(path.read_text())
+            try:
+                self.entries = json.loads(path.read_text())
+                if not isinstance(self.entries, list):
+                    # Handle legacy formats
+                    self.entries = []
+            except json.JSONDecodeError:
+                # Corrupt file, start fresh
+                self.entries = []
+                self._save()
         else:
             self.entries = []
+            self._save()
+    
+    def _save(self) -> None:
+        """Save entries to disk with pretty formatting."""
+        self.path.write_text(json.dumps(self.entries, indent=2, ensure_ascii=False))
 
     def has_file(self, f: str) -> bool:
         return any(e.get("file") == f for e in self.entries)
@@ -522,13 +814,14 @@ class JSONDB:
         return any(e.get("hash") == h for e in self.entries)
 
     def add(self, entry: dict[str, Any], file: str, h: str) -> bool:
+        """Add a new component entry to the database."""
         if self.has_file(file) or self.has_hash(h):
             return False
         entry = entry.copy()
         entry["file"] = file
         entry["hash"] = h
         self.entries.append(entry)
-        self.path.write_text(json.dumps(self.entries))
+        self._save()
         return True
 
     def normalize_type(self, type_str: str) -> str:
@@ -546,7 +839,7 @@ class JSONDB:
         # Add all collected components
         if components_to_add:
             self.entries.extend(components_to_add)
-            self.path.write_text(json.dumps(self.entries))
+            self._save()
 
     def list_all(self, limit: int | None = None, offset: int = 0) -> list[dict[str, Any]]:
         """List all components with optional pagination."""
@@ -590,7 +883,7 @@ class JSONDB:
         for i, entry in enumerate(self.entries):
             if entry.get("id") == component_id:
                 self.entries[i].update(updates)
-                self.path.write_text(json.dumps(self.entries))
+                self._save()
                 return True
         return False
 
@@ -599,7 +892,7 @@ class JSONDB:
         for i, entry in enumerate(self.entries):
             if entry.get("id") == component_id:
                 del self.entries[i]
-                self.path.write_text(json.dumps(self.entries))
+                self._save()
                 return True
         return False
 
@@ -639,14 +932,50 @@ class SQLiteDB:
     
     Stores components in a relational database with JSON data column
     for flexibility while maintaining query performance.
+    
+    Features:
+    - Automatic database initialization
+    - Efficient indexing on ID, file, and hash fields
+    - JSON storage for flexible component data
+    - Full-text search capabilities
     """
     
     def __init__(self, path: Path) -> None:
+        """Initialize SQLite database with schema creation.
+        
+        Args:
+            path: Path to the SQLite database file
+        """
         self.db_path = str(path)
+        
+        # Ensure parent directory exists
+        path.parent.mkdir(parents=True, exist_ok=True)
+        
+        # Connect and create schema
         self.conn = sqlite3.connect(path)
+        self._init_schema()
+    
+    def _init_schema(self) -> None:
+        """Initialize database schema with proper indexes."""
+        # Create main table
+        self.conn.execute("""
+            CREATE TABLE IF NOT EXISTS components (
+                id TEXT PRIMARY KEY,
+                file TEXT,
+                hash TEXT,
+                data TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        
+        # Create indexes for efficient queries
         self.conn.execute(
-            "CREATE TABLE IF NOT EXISTS components (id TEXT PRIMARY KEY, file TEXT, hash TEXT, data TEXT)"
+            "CREATE INDEX IF NOT EXISTS idx_file ON components(file)"
         )
+        self.conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_hash ON components(hash)"
+        )
+        
         self.conn.commit()
 
     def has_file(self, f: str) -> bool:
