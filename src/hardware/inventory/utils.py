@@ -223,7 +223,7 @@ def _mistral_ocr_extract(path: Path, service: str) -> str:
     }
     
     payload = {
-        "model": "pixtral-12b-2409",  # Mistral's vision model
+        "model": "pixtral-large-latest",  # Mistral's latest vision model (Oct 2025)
         "messages": [
             {
                 "role": "user",
@@ -268,7 +268,7 @@ def _openai_ocr_extract(path: Path, service: str) -> str:
     }
     
     payload = {
-        "model": "gpt-4o",  # GPT-4 with vision capabilities
+        "model": "gpt-4o-2025-08-06",  # GPT-4o latest version (Aug 2025)
         "messages": [
             {
                 "role": "user",
@@ -315,7 +315,7 @@ def _openrouter_ocr_extract(path: Path, service: str) -> str:
     }
     
     payload = {
-        "model": "anthropic/claude-3.5-sonnet",  # Vision-capable model
+        "model": "anthropic/claude-3-5-sonnet-20241022",  # Claude 3.5 Sonnet (Oct 2024, still latest as of Oct 2025)
         "messages": [
             {
                 "role": "user",
