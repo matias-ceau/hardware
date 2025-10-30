@@ -959,11 +959,11 @@ DATABASE OPTIONS:
     # Ask command
     ask_parser = subparsers.add_parser("ask", help="Ask natural language question about inventory")
     ask_parser.add_argument("question", help="Question about your inventory")
-    ask_parser.add_argument("--model", default="gpt-4o", help="LLM model to use")
+    ask_parser.add_argument("--model", default="gpt-4o-2025-08-06", help="LLM model to use")
     
     # Chat command
     chat_parser = subparsers.add_parser("chat", help="Interactive chat mode for inventory")
-    chat_parser.add_argument("--model", default="gpt-4o", help="LLM model to use")
+    chat_parser.add_argument("--model", default="gpt-4o-2025-08-06", help="LLM model to use")
     
     # Test command
     test_parser = subparsers.add_parser("test", help="Run API and database tests")

@@ -280,7 +280,7 @@ def _mistral_ocr_extract(path: Path, service: str) -> str:
     
     # Improved structured prompt for better extraction
     payload = {
-        "model": DEFAULT_MODELS["mistral"],  # pixtral-large-2411 - latest model
+        "model": "pixtral-large-latest",  # Mistral's latest vision model (Oct 2025)
         "messages": [
             {
                 "role": "user",
@@ -335,7 +335,7 @@ def _openai_ocr_extract(path: Path, service: str) -> str:
     
     # Improved structured prompt for better extraction
     payload = {
-        "model": DEFAULT_MODELS["openai"],  # gpt-4o-2024-11-20 - latest model
+        "model": "gpt-4o-2025-08-06",  # GPT-4o latest version (Aug 2025)
         "messages": [
             {
                 "role": "user",

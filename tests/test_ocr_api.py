@@ -92,7 +92,7 @@ class TestOCRServices:
         assert call_args[0][0] == utils.DEFAULT_ENDPOINTS["mistral"]
         assert "Authorization" in call_args[1]["headers"]
         assert "model" in call_args[1]["json"]
-        assert call_args[1]["json"]["model"] == "pixtral-12b-2409"
+        assert call_args[1]["json"]["model"] == "pixtral-large-latest"
     
     def test_api_key_missing_error(self):
         """Test that missing API keys raise appropriate errors."""
