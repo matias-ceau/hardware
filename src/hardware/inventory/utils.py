@@ -315,7 +315,7 @@ def _openrouter_ocr_extract(path: Path, service: str) -> str:
     }
     
     payload = {
-        "model": "anthropic/claude-3-5-sonnet-20241022",  # Claude 3.5 Sonnet (Oct 2024, still latest as of Oct 2025)
+        "model": "anthropic/claude-3.5-sonnet",  # Claude 3.5 Sonnet (latest OpenRouter slug as of Oct 2025)
         "messages": [
             {
                 "role": "user",
