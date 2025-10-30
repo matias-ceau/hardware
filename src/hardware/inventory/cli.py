@@ -99,9 +99,11 @@ def _show_rich_help() -> None:
     
     console.print("\n[bold yellow]OCR SERVICES[/]")
     console.print("Supported OCR services (set with --service):")
-    console.print("• [cyan]mistral[/] - Mistral vision API (default)")
-    console.print("• [cyan]openai[/] - OpenAI GPT-4o vision")
-    console.print("• [cyan]openrouter[/] - OpenRouter multi-model access")
+    console.print("• [cyan]mistral[/] - Mistral Pixtral Large (latest, Nov 2024)")
+    console.print("• [cyan]openai[/] - OpenAI GPT-4o (latest, Nov 2024)")
+    console.print("• [cyan]gemini[/] - Google Gemini 2.0 Flash (newest, Dec 2024)")
+    console.print("• [cyan]anthropic[/] - Claude 3.5 Sonnet (best-in-class vision)")
+    console.print("• [cyan]openrouter[/] - OpenRouter multi-model access (Claude 3.5)")
     console.print("• [cyan]local[/] - Local Ollama instance")
     console.print("• [cyan]ocr.space[/] - OCR.Space cloud service")
     
@@ -839,7 +841,7 @@ def _check_api_keys() -> dict[str, bool]:
         "OpenRouter": ["OPENROUTER_API_KEY"],
         "OCR.Space": ["OCR_SPACE_API_KEY"],
         "Anthropic": ["ANTHROPIC_API_KEY"],
-        "Google": ["GOOGLE_API_KEY", "GOOGLE_CLOUD_API_KEY"],
+        "Google/Gemini": ["GOOGLE_API_KEY", "GEMINI_API_KEY"],
         "Azure": ["AZURE_API_KEY", "AZURE_OPENAI_API_KEY"],
         "Mistral": ["MISTRAL_API_KEY"],
         "Groq": ["GROQ_API_KEY"],
@@ -957,11 +959,11 @@ DATABASE OPTIONS:
     # Ask command
     ask_parser = subparsers.add_parser("ask", help="Ask natural language question about inventory")
     ask_parser.add_argument("question", help="Question about your inventory")
-    ask_parser.add_argument("--model", default="gpt-4o", help="LLM model to use")
+    ask_parser.add_argument("--model", default="gpt-4o-2025-08-06", help="LLM model to use")
     
     # Chat command
     chat_parser = subparsers.add_parser("chat", help="Interactive chat mode for inventory")
-    chat_parser.add_argument("--model", default="gpt-4o", help="LLM model to use")
+    chat_parser.add_argument("--model", default="gpt-4o-2025-08-06", help="LLM model to use")
     
     # Test command
     test_parser = subparsers.add_parser("test", help="Run API and database tests")

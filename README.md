@@ -1,6 +1,34 @@
 # Hardware Management System
 
-A comprehensive Python-based system for managing electronics hardware projects, components, and documentation with AI-powered multimodal capabilities.
+> A modern, AI-powered electronics component inventory and project management system
+
+[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+A comprehensive Python-based system for managing electronics hardware projects, components, and documentation with **cutting-edge AI vision models** for multimodal data ingestion.
+
+## 📑 Table of Contents
+
+- [What Makes This Special](#-what-makes-this-special)
+- [Features](#-features)
+- [Quick Start](#quick-start)
+- [Choosing the Right OCR Service](#choosing-the-right-ocr-service)
+- [Examples](#examples)
+- [Documentation](#documentation)
+- [Database Location & Discovery](#-database-location--discovery)
+- [Configuration](#configuration)
+- [Troubleshooting](#troubleshooting)
+- [AI-Powered Models](#ai-powered)
+- [Development](#development)
+
+## ✨ What Makes This Special
+
+- 🤖 **Latest AI Models**: Uses Google Gemini 2.0, Claude 3.5, GPT-4o (Nov 2024) for component recognition
+- 🔍 **Smart OCR**: Extract component data from photos with state-of-the-art vision models
+- 💬 **Natural Language**: Ask questions like "Do I have any 10k resistors?" and get answers
+- 🗄️ **Flexible Storage**: SQLite for performance, JSON-LD for portability
+- 🔌 **MCP Integration**: Seamless LLM integration via Model Context Protocol
+- 📊 **Project Ready**: Framework for BOM management and project tracking
 
 ## 🚀 Features
 
@@ -44,29 +72,60 @@ A comprehensive Python-based system for managing electronics hardware projects, 
 ### Installation
 
 ```bash
-git clone <repository-url>
+# Clone the repository
+git clone https://github.com/matias-ceau/hardware
 cd hardware
-uv sync  # Install dependencies
+
+# Install with uv (recommended)
+uv sync
+
+# Or install with pip
+pip install -e .
 ```
 
-### Basic Usage
+**🚀 [Complete Getting Started Guide →](docs/examples/getting-started.md)**
+
+### Set Up API Keys
+
+Choose one or more cutting-edge vision services:
 
 ```bash
-# Process component images
-uv run hardware inventory add photos/ --service mistral
+# Google Gemini 2.0 Flash (newest, Dec 2024) - Recommended!
+export GOOGLE_API_KEY="your-google-key"
 
-# List components
-uv run hardware inventory list --limit 10
+# Anthropic Claude 3.5 Sonnet (best vision quality)
+export ANTHROPIC_API_KEY="your-anthropic-key"
 
-# Natural language queries
-uv run hardware inventory ask "Do I have any 10k resistors?"
+# OpenAI GPT-4o (latest, Nov 2024)
+export OPENAI_API_KEY="your-openai-key"
 
-# Interactive chat
-uv run hardware inventory chat
-
-# System health check
-uv run hardware inventory info
+# Mistral Pixtral Large (cost-effective)
+export MISTRAL_API_KEY="your-mistral-key"
 ```
+
+### First Steps
+
+```bash
+# Check system status and configuration
+hardware inventory info
+
+# Extract components from photos (using newest model)
+hardware inventory add component-photos/ --service gemini
+
+# List your components
+hardware inventory list --limit 10
+
+# Search for specific parts
+hardware inventory search "resistor 10k"
+
+# Ask natural language questions
+hardware inventory ask "What capacitors do I have over 100uF?"
+
+# Interactive chat mode
+hardware inventory chat
+```
+
+**📚 [See Complete Usage Guide →](docs/examples/usage-guide.md)**
 
 ### Shell Completion
 
@@ -124,13 +183,15 @@ uv run hardware inventory list --limit 1
 
 ### OCR Services
 
-| Service | API Key Required | Description |
-|---------|------------------|-------------|
-| mistral | MISTRAL_API_KEY | Mistral vision API (default) |
-| openai | OPENAI_API_KEY | OpenAI GPT-4o vision |
-| openrouter | OPENROUTER_API_KEY | OpenRouter multi-model access |
-| local | None | Local Ollama instance |
-| ocr.space | OCR_SPACE_API_KEY | OCR.Space cloud service |
+| Service | Model | API Key Required | Description |
+|---------|-------|------------------|-------------|
+| mistral | pixtral-large-2411 | MISTRAL_API_KEY | Mistral's latest vision model (Nov 2024) |
+| openai | gpt-4o-2024-11-20 | OPENAI_API_KEY | OpenAI's latest GPT-4o vision (Nov 2024) |
+| gemini | gemini-2.0-flash-exp | GOOGLE_API_KEY | Google's newest multimodal model (Dec 2024) |
+| anthropic | claude-3-5-sonnet-20241022 | ANTHROPIC_API_KEY | Best-in-class vision model (Oct 2024) |
+| openrouter | claude-3.5-sonnet | OPENROUTER_API_KEY | Access to Claude via OpenRouter |
+| local | - | None | Local Ollama instance |
+| ocr.space | - | OCR_SPACE_API_KEY | OCR.Space cloud service |
 
 ## Architecture
 
@@ -143,15 +204,31 @@ hardware/
 └── visualize/     # (Future) Data visualization UI
 ```
 
+## Choosing the Right OCR Service
+
+The system supports multiple cutting-edge vision models for component extraction:
+
+| Service | Best For | Strengths | Cost |
+|---------|----------|-----------|------|
+| **Gemini 2.0** | General use | Fast, accurate, newest model (Dec 2024) | Low |
+| **Claude 3.5 Sonnet** | Complex images | Best vision quality, detailed extraction | Medium |
+| **GPT-4o (latest)** | Balanced | Great accuracy, reliable, well-tested | Medium |
+| **Mistral Pixtral** | Cost-effective | Good quality, European provider | Low |
+| **OpenRouter** | Flexibility | Access to multiple models via one API | Variable |
+
+**Recommendation**: Start with **Gemini 2.0** for best speed/quality balance, or use **Claude 3.5 Sonnet** for the highest accuracy on complex component images.
+
 ## Configuration
 
 ### Environment Variables
 
 ```bash
-# OCR API Keys
-export MISTRAL_API_KEY="your-mistral-key"
-export OPENAI_API_KEY="your-openai-key"
-export OPENROUTER_API_KEY="your-openrouter-key"
+# OCR API Keys - Use cutting-edge models for best results
+export MISTRAL_API_KEY="your-mistral-key"          # Latest: pixtral-large-2411
+export OPENAI_API_KEY="your-openai-key"            # Latest: gpt-4o-2024-11-20
+export GOOGLE_API_KEY="your-google-key"            # Gemini 2.0 Flash (newest)
+export ANTHROPIC_API_KEY="your-anthropic-key"      # Claude 3.5 Sonnet (best vision)
+export OPENROUTER_API_KEY="your-openrouter-key"    # Multi-model access
 
 # Optional: Custom data directory
 export XDG_DATA_HOME="/path/to/data"
@@ -159,20 +236,67 @@ export XDG_DATA_HOME="/path/to/data"
 
 ### Configuration Files
 
-Create ~/.component_loader.toml or ./cfg.toml:
+Create `~/.component_loader.toml` for global settings:
 
 ```toml
 [main]
-service = "mistral"
+service = "gemini"  # Default OCR service
 description = "My hardware inventory"
 
 [database]
-sqlite_path = "~/custom-inventory.db"
+sqlite_path = "~/.local/share/hardware/inventory-main.db"
 
 [tools]
 preprocess = []
 postprocess = []
 ```
+
+Or `./cfg.toml` for project-specific settings (takes precedence).
+
+**📖 [Configuration Guide →](docs/examples/usage-guide.md#configuration)**
+
+## Troubleshooting
+
+### Common Issues
+
+**"API key not found" error:**
+```bash
+# Check which keys are detected
+hardware inventory info
+
+# Set the missing key
+export GOOGLE_API_KEY="your-key-here"
+```
+
+**"Database not found" error:**
+```bash
+# Check database location
+hardware inventory info
+
+# The system auto-creates databases, but you can create manually:
+mkdir -p ~/.local/share/hardware
+```
+
+**OCR extraction fails:**
+```bash
+# Try a different service
+hardware inventory add photo.jpg --service anthropic
+
+# Test API connectivity
+hardware inventory test --api-keys
+```
+
+**No components found after extraction:**
+- Check the image quality (clear, well-lit photos work best)
+- Try Claude 3.5 for better accuracy: `--service anthropic`
+- Review the OCR output manually to verify text extraction
+
+### Getting Help
+
+1. **Check system info**: `hardware inventory info`
+2. **Run tests**: `hardware inventory test --all`
+3. **Review logs**: Check console output for detailed error messages
+4. **Read docs**: See [usage guide](docs/examples/usage-guide.md) for examples
 
 ## Development
 
@@ -212,18 +336,56 @@ uv run hardware-mcp-server
 ### Component Management
 
 ```bash
-# Add components from photos
-uv run hardware inventory add component-photos/ --service openai
+# Add components from photos using cutting-edge models
+hardware inventory add component-photos/ --service gemini    # Google's newest
+hardware inventory add component-photos/ --service anthropic # Best vision quality
+hardware inventory add component-photos/ --service openai    # Latest GPT-4o
 
 # Search for specific components
-uv run hardware inventory search "resistor 10k"
+hardware inventory search "resistor 10k"
+hardware inventory search "capacitor" --field type
 
 # Natural language queries
-uv run hardware inventory ask "What capacitors do I have over 100uF?"
+hardware inventory ask "What capacitors do I have over 100uF?"
+hardware inventory ask "Do I have any SMD resistors?"
 
 # Update component quantity
-uv run hardware inventory update comp-123 --set qty="50 pcs"
+hardware inventory update comp-123 --set qty="50 pcs"
+hardware inventory update r001 --set notes="Used in power supply"
+
+# View statistics
+hardware inventory stats
 ```
+
+### Interactive Workflows
+
+```bash
+# Interactive chat for inventory queries
+hardware inventory chat
+
+# Example conversation:
+# You> What resistors do I have?
+# Assistant> You have 89 resistors in inventory, including...
+#
+# You> Show me capacitors above 100uF
+# Assistant> Here are your capacitors above 100uF...
+```
+
+### Project-Specific Inventory
+
+```bash
+# Create a project directory with its own inventory
+mkdir ~/projects/robot-arm
+cd ~/projects/robot-arm
+touch .hardware-inventory.db
+
+# Now all commands use this project's database
+hardware inventory add parts/ --service gemini
+hardware inventory list
+hardware inventory stats
+```
+
+**📚 [See Complete Examples →](docs/examples/usage-guide.md)**
 
 ### Project Workflow (Coming Soon)
 
@@ -249,14 +411,19 @@ uv run hardware projects bom proj-001
 - [ ] Data visualization interface
 - [ ] Circuit simulation integration
 
+## AI-Powered
+
+This system leverages the **latest cutting-edge AI models** (as of Dec 2024) for enhanced functionality:
+
+| Service | Model | Release | Best For |
+|---------|-------|---------|----------|
+| Google Gemini | 2.0 Flash Exp | Dec 2024 | Fastest, newest, great balance |
+| Anthropic | Claude 3.5 Sonnet | Oct 2024 | Best vision quality, complex images |
+| OpenAI | GPT-4o (Nov 2024) | Nov 2024 | Reliable, well-tested, consistent |
+| Mistral | Pixtral Large | Nov 2024 | Cost-effective, European provider |
+
+**Recommendation**: Start with **Gemini 2.0** for optimal speed and quality, switch to **Claude 3.5** for maximum accuracy on challenging images.
+
 ## License
 
 MIT License - see LICENSE file for details.
-
-## AI-Powered
-
-This system leverages multiple AI services for enhanced functionality:
-- Vision AI for component recognition and OCR
-- Language Models for natural queries and chat
-- Embeddings for semantic search (coming soon)
-- MCP Protocol for seamless LLM integration
