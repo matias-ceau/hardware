@@ -335,7 +335,7 @@ def _openai_ocr_extract(path: Path, service: str) -> str:
     
     # Improved structured prompt for better extraction
     payload = {
-        "model": "gpt-4o-2025-08-06",  # GPT-4o latest version (Aug 2025)
+        "model": "gpt-4o",  # GPT-4o with vision capabilities (latest as of Oct 2025)
         "messages": [
             {
                 "role": "user",
@@ -392,7 +392,7 @@ def _openrouter_ocr_extract(path: Path, service: str) -> str:
     
     # Improved structured prompt for better extraction
     payload = {
-        "model": DEFAULT_MODELS["openrouter"],  # anthropic/claude-3.5-sonnet - best vision
+        "model": "anthropic/claude-3-5-sonnet-20241022",  # Vision-capable model (Oct 2025)
         "messages": [
             {
                 "role": "user",
