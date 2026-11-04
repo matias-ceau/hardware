@@ -17,7 +17,7 @@ To run all tests, you may want to add:
 
 ## Mock Data
 
-The tests use the existing `data/electronics_updated_1.jsonld` file for database testing.
+Tests that need an example database are skipped when none is present.
 
 ## Creating Test Images
 

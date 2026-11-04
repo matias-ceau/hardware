@@ -12,8 +12,6 @@ except ImportError:
     argcomplete = None
 
 from .inventory import cli as inventory_cli
-from .projects import cli as projects_cli  
-from .resources import cli as resources_cli
 
 console = Console()
 
@@ -27,8 +25,8 @@ def _show_rich_help() -> None:
     ))
     
     console.print("\n[bold yellow]DESCRIPTION[/]")
-    console.print("A comprehensive system for managing electronics hardware projects, components,")
-    console.print("and documentation with AI-powered OCR and natural language interfaces.")
+    console.print("A simple electronics component inventory with AI-powered OCR")
+    console.print("and natural language queries.")
     
     console.print("\n[bold yellow]MODULES[/]")
     
@@ -42,16 +40,6 @@ def _show_rich_help() -> None:
         "[green]✓ Ready[/]", 
         "Component management with OCR extraction and CRUD operations"
     )
-    table.add_row(
-        "projects", 
-        "[yellow]🚧 Framework[/]", 
-        "Project and BOM (Bill of Materials) management"
-    )
-    table.add_row(
-        "resources", 
-        "[yellow]🚧 Framework[/]", 
-        "Documentation, datasheets, and reference search"
-    )
     console.print(table)
     
     console.print("\n[bold yellow]USAGE[/]")
@@ -63,8 +51,6 @@ def _show_rich_help() -> None:
         ("hardware inventory add photos/", "Process component images with OCR"),
         ("hardware inventory ask \"Do I have 10k resistors?\"", "Natural language inventory query"),
         ("hardware inventory chat", "Interactive chat mode"),
-        ("hardware projects create \"LED Matrix\"", "Create new project"),
-        ("hardware resources search \"datasheet\"", "Search documentation"),
         ("hardware inventory info", "System health check"),
     ]
     
@@ -73,8 +59,8 @@ def _show_rich_help() -> None:
         console.print(f"    [dim]{desc}[/]")
     
     console.print("\n[bold yellow]DIRECT ACCESS[/]")
-    console.print("Each module can also be accessed directly:")
-    console.print("  [cyan]hardware-inventory[/], [cyan]hardware-projects[/], [cyan]hardware-resources[/], [cyan]hardware-mcp-server[/]")
+    console.print("The inventory can also be accessed directly:")
+    console.print("  [cyan]hardware-inventory[/]")
     
     console.print("\n[bold yellow]SHELL COMPLETION[/]")
     console.print("  hardware completion bash      # Generate bash completion script")
@@ -116,26 +102,6 @@ def _generate_completion_script(shell: str) -> None:
     inventory_subparsers.add_parser('chat', help='Interactive chat')
     inventory_subparsers.add_parser('test', help='API and database tests')
     
-    # Projects subcommand  
-    projects_parser = subparsers.add_parser('projects', help='Project and BOM management')
-    projects_subparsers = projects_parser.add_subparsers(dest='command')
-    projects_subparsers.add_parser('create', help='Create project')
-    projects_subparsers.add_parser('list', help='List projects')
-    projects_subparsers.add_parser('show', help='Show project')
-    projects_subparsers.add_parser('bom', help='Show BOM')
-    projects_subparsers.add_parser('add-component', help='Add component to BOM')
-    projects_subparsers.add_parser('delete', help='Delete project')
-    
-    # Resources subcommand
-    resources_parser = subparsers.add_parser('resources', help='Documentation management')
-    resources_subparsers = resources_parser.add_subparsers(dest='command')
-    resources_subparsers.add_parser('add', help='Add document')
-    resources_subparsers.add_parser('search', help='Search documents')
-    resources_subparsers.add_parser('list', help='List documents')
-    resources_subparsers.add_parser('extract', help='Extract text')
-    resources_subparsers.add_parser('show', help='Show document')
-    resources_subparsers.add_parser('delete', help='Delete document')
-    
     # Completion subcommand
     completion_parser = subparsers.add_parser('completion', help='Shell completion')
     completion_parser.add_argument('shell', choices=['bash', 'zsh', 'fish'], help='Shell type')
@@ -175,7 +141,7 @@ def _show_completion_help() -> None:
     console.print()
     
     console.print("[bold yellow]Features:[/]")
-    console.print("• Command completion (inventory, projects, resources)")
+    console.print("• Command completion (inventory)")
     console.print("• Subcommand completion (add, list, search, etc.)")
     console.print("• Optional argument completion (--help, --db-sqlite, etc.)")
     console.print("• File path completion for file arguments")
@@ -209,10 +175,6 @@ def main(argv: list[str] | None = None) -> None:
     match module_name:
         case "inventory":
             inventory_cli.main(remaining_args)
-        case "projects":
-            projects_cli.main(remaining_args)
-        case "resources":
-            resources_cli.main(remaining_args)
         case "completion":
             if remaining_args and remaining_args[0] in ["bash", "zsh", "fish"]:
                 _generate_completion_script(remaining_args[0])
@@ -230,7 +192,7 @@ def main(argv: list[str] | None = None) -> None:
                 _show_rich_help()
             else:
                 console.print(f"[red]Error:[/] Unknown module '{module_name}'")
-                console.print("Available modules: [cyan]inventory[/], [cyan]projects[/], [cyan]resources[/], [cyan]completion[/]")
+                console.print("Available modules: [cyan]inventory[/], [cyan]completion[/]")
                 console.print("Use [bold]hardware --help[/] for more information.")
 
 

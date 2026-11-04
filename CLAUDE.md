@@ -4,28 +4,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Structure
 
-This is a comprehensive Python hardware management system using modern Python tooling with multiple specialized submodules:
+This is a Python electronics **component inventory** tool (scope deliberately reduced; projects/BOM, resources/datasheets and the MCP server were removed).
 
-- **Package Manager**: UV (uv) for dependency management and virtual environments
-- **Project Structure**: Standard Python package layout with `src/hardware/` containing specialized submodules
-- **Architecture**: Modular design with unified MCP server access
-
-### Submodules
-
-1. **inventory/** - Component management with OCR extraction and CRUD operations
-2. **projects/** - Project and BOM (Bill of Materials) management  
-3. **resources/** - Documentation, datasheets, and reference search with embeddings
-4. **mcp/** - Unified MCP server providing LLM access to all submodules
-5. **visualize/** - (Future) Data visualization and circuit simulation UI
+- **Package Manager**: UV (uv)
+- **Layout**: `src/hardware/` with a single submodule, `inventory/`
 
 ### Entry Points
 
 CLI commands defined in pyproject.toml:
-- `hardware` - Main CLI dispatcher routing to submodules
+- `hardware` - Main CLI dispatcher (routes to `inventory`, plus `completion`)
 - `hardware-inventory` - Component inventory management
-- `hardware-projects` - Project and BOM management
-- `hardware-resources` - Documentation and reference management  
-- `hardware-mcp-server` - MCP server for LLM integration
 
 ## Core Architecture
 
@@ -52,7 +40,7 @@ CLI commands defined in pyproject.toml:
 The system supports two storage formats through a Protocol interface with full CRUD operations:
 
 - **SQLiteDB**: Structured relational storage with JSON data column for flexibility (primary)
-- **JSONDB**: JSON-LD format storage (initial database in `data/electronics_updated_1.jsonld` can be imported for testing)
+- **JSONDB**: JSON-LD format storage
 
 Both backends support:
 - **Create**: Add new components with OCR or manual entry
@@ -146,33 +134,6 @@ uv run hardware-inventory dump [<ext>|-o <path>.ext>]
 
 # Export database or reports in a specified format (no equivalence in terms of information)
 uv run hardware-inventory export [--interactive/-i] [ <choice> [<path>.ext | --type <ext>]]
-```
-
-#### Projects Management Commands
-```bash
-# Create and manage projects
-uv run hardware-projects create "Arduino LED Matrix"
-uv run hardware-projects list
-uv run hardware-projects show project-001
-
-# BOM management
-uv run hardware-projects bom project-001
-uv run hardware-projects add-component project-001 resistor "10k" 5
-```
-
-#### Resources Management Commands  
-```bash
-# Add and search documentation
-uv run hardware-resources add datasheet.pdf --component "LM358"
-uv run hardware-resources search "operational amplifier"
-uv run hardware-resources list --type datasheet
-uv run hardware-resources extract datasheet.pdf
-```
-
-#### MCP Server
-```bash
-# Start MCP server for LLM integration
-uv run hardware-mcp-server
 ```
 
 #### Shell Completion
