@@ -42,8 +42,7 @@ venv.bak/
 .tox/
 htmlcov/
 
-# Database files (temporary/test)
-*.db
+# Temporary/test data (inventory .db files are tracked on purpose)
 *.sqlite
 *.sqlite3
 components.json
